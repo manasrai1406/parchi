@@ -42,7 +42,7 @@ def format_ref_no(number: int, when: datetime) -> str:
     return f"REF-{when.year:04d}-{number:06d}"
 
 
-async def _lock_hash(session: AsyncSession, sha256: str) -> None:
+async def lock_hash(session: AsyncSession, sha256: str) -> None:
     # Serializes registrations of identical bytes until this transaction ends (D-018).
     await session.execute(
         text("SELECT pg_advisory_xact_lock(hashtextextended(:sha, 0))"), {"sha": sha256}
@@ -86,7 +86,7 @@ async def register(
     try:
         async with session.begin():
             await _check_batch_has_room(session, batch_id, settings.max_files_per_batch)
-            await _lock_hash(session, received.sha256)
+            await lock_hash(session, received.sha256)
 
             original = await _earliest_with_hash(session, received.sha256)
             if original is not None and not confirm_duplicate:

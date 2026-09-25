@@ -45,3 +45,17 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return body as T;
 }
+
+/** DELETE, expecting 204 No Content. */
+export async function apiDelete(path: string): Promise<void> {
+  const response = await fetch(`${API_BASE}${path}`, { method: "DELETE" });
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    throw new ApiError(
+      response.status,
+      isErrorBody(body)
+        ? body
+        : { code: "http_error", message: `Request failed (${response.status})`, request_id: null },
+    );
+  }
+}

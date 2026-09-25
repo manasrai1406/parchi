@@ -17,17 +17,18 @@ export function renderAt(path: string) {
   return router;
 }
 
-type Route = (url: string) => { status?: number; body: unknown } | undefined;
+type Route = (url: string, method: string) => { status?: number; body?: unknown } | undefined;
 
 /** Answer fetch calls by URL. Unmatched URLs get a 404 in the API's error shape. */
 export function mockApi(route: Route) {
-  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    const answer = route(url) ?? {
+    const answer = route(url, init?.method ?? "GET") ?? {
       status: 404,
       body: { code: "not_found", message: "Not found", request_id: null },
     };
-    return new Response(JSON.stringify(answer.body), { status: answer.status ?? 200 });
+    const status = answer.status ?? 200;
+    return new Response(status === 204 ? null : JSON.stringify(answer.body), { status });
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;

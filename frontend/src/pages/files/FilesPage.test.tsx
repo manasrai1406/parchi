@@ -28,9 +28,10 @@ const FILES = [
   },
 ];
 
-function setup() {
-  return mockApi((url) => {
+function setup(deleteAnswer: { status: number; body?: unknown } = { status: 204 }) {
+  return mockApi((url, method) => {
     if (url === "/api/health/ready") return { body: READY };
+    if (method === "DELETE") return deleteAnswer;
     if (url.startsWith("/api/files?")) {
       return { body: { items: FILES, total: FILES.length, page: 1, page_size: 25 } };
     }
@@ -85,5 +86,61 @@ describe("Files page", () => {
     });
 
     await waitFor(() => expect(filesCalls(fetchMock).at(-1)?.get("q")).toBe("REF-2026-000002"));
+  });
+});
+
+describe("deleting a file", () => {
+  it("asks first, starting on Cancel, and can be cancelled", async () => {
+    const fetchMock = setup();
+    renderAt("/files");
+    fireEvent.click(await screen.findByRole("button", { name: "Delete inv_0421.pdf" }));
+
+    const dialog = screen.getByRole("alertdialog", { name: "Delete inv_0421.pdf?" });
+    expect(dialog.textContent).toContain("REF-2026-000001");
+    expect(document.activeElement?.textContent).toBe("Cancel");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("deletes by reference number and refreshes the list", async () => {
+    const fetchMock = setup();
+    renderAt("/files");
+    fireEvent.click(await screen.findByRole("button", { name: "Delete inv_0421.pdf" }));
+    const listCallsBefore = filesCalls(fetchMock).length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(fetchMock).toHaveBeenCalledWith("/api/files/REF-2026-000001", { method: "DELETE" });
+    await waitFor(() => expect(filesCalls(fetchMock).length).toBeGreaterThan(listCallsBefore));
+  });
+
+  it("shows why a delete was refused and keeps the dialog open", async () => {
+    setup({
+      status: 409,
+      body: { code: "file_busy", message: "This file is being processed.", request_id: "r" },
+    });
+    renderAt("/files");
+    fireEvent.click(await screen.findByRole("button", { name: "Delete inv_0421.pdf" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByText("This file is being processed.")).toBeTruthy();
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+  });
+
+  it("cannot be started while a file is being processed", async () => {
+    FILES[0]!.status = "processing";
+    try {
+      setup();
+      renderAt("/files");
+      const button = await screen.findByRole("button", { name: "Delete inv_0421_copy.pdf" });
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    } finally {
+      FILES[0]!.status = "pending";
+    }
   });
 });

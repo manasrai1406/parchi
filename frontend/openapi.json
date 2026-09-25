@@ -392,6 +392,60 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Remove File",
+        "description": "Delete a file with its runs, receipts and flags (D-019). Not while it is processing.",
+        "operationId": "remove_file_files__file_key__delete",
+        "parameters": [
+          {
+            "name": "file_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/files/{file_key}/download": {

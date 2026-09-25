@@ -7,6 +7,7 @@ to <STORAGE_DIR>/.tmp and then renamed into place, so a stored file is always co
 import hashlib
 import os
 import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO
@@ -89,3 +90,16 @@ class Storage:
 
     def remove(self, relative: str) -> None:
         self.absolute_path(relative).unlink(missing_ok=True)
+
+    def set_aside(self, relative: str) -> Path | None:
+        """Move stored bytes out of place, so a delete can still be undone until it commits."""
+        target = self.absolute_path(relative)
+        if not target.exists():
+            return None
+        self.ensure_dirs()
+        aside = self.tmp_dir / f"deleting-{uuid.uuid4().hex}-{target.name}"
+        os.replace(target, aside)
+        return aside
+
+    def put_back(self, aside: Path, relative: str) -> None:
+        os.replace(aside, self.absolute_path(relative))

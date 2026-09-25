@@ -1,6 +1,12 @@
-import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
-import { apiGet, type Schemas } from "./client";
+import { apiDelete, apiGet, type Schemas } from "./client";
 
 export type FileStatus = Schemas["FileSummary"]["status"];
 export type FileSummary = Schemas["FileSummary"];
@@ -58,4 +64,20 @@ export function useBatches(batchIds: number[]) {
 
 export function downloadUrl(file: Pick<FileSummary, "ref_no">): string {
   return `/api/files/${encodeURIComponent(file.ref_no)}/download`;
+}
+
+/** Statuses during which a file cannot be deleted (D-019). */
+export const BUSY: readonly FileStatus[] = ["processing", "ai_processing"];
+
+export function useDeleteFile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: Pick<FileSummary, "ref_no">) =>
+      apiDelete(`/files/${encodeURIComponent(file.ref_no)}`),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["files"] }),
+        queryClient.invalidateQueries({ queryKey: ["batches"] }),
+      ]),
+  });
 }

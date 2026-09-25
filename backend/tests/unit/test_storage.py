@@ -59,3 +59,19 @@ def test_paths_outside_storage_are_refused(storage: Storage, relative: str) -> N
     storage.ensure_dirs()
     with pytest.raises(ValueError):
         storage.absolute_path(relative)
+
+
+def test_set_aside_and_put_back_restore_the_file(storage: Storage) -> None:
+    received = storage.receive(io.BytesIO(DATA), max_bytes=len(DATA))
+    relative, _ = storage.store(received, "pdf")
+
+    aside = storage.set_aside(relative)
+    assert aside is not None
+    assert not storage.absolute_path(relative).exists()
+
+    storage.put_back(aside, relative)
+    assert storage.absolute_path(relative).read_bytes() == DATA
+
+
+def test_set_aside_of_a_missing_file_is_none(storage: Storage) -> None:
+    assert storage.set_aside(f"{SHA[:2]}/{SHA}.pdf") is None

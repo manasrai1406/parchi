@@ -138,3 +138,10 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (Phase 2)
 - **Decision:** Register takes a PostgreSQL advisory lock on the file's hash for the length of its transaction. Two simultaneous identical uploads are therefore handled one after the other: the first is saved, the second is reported as a duplicate. Stored bytes are removed after a failed insert only when no row points at them.
 - **Why:** `sha256` is not unique any more (D-006), so the database cannot catch this race on its own.
+
+## D-019 Deleting files
+
+- **Date:** 2026-09-26 (Phase 2)
+- **Decision:** Files can be deleted with `DELETE /files/{id or ref}`, from a Delete button on the Files page that asks for confirmation. Any file can be deleted except while it is `processing` or `ai_processing`. Deleting removes the file row and everything that belongs to it: extraction runs (including AI approval records), receipts, line items and flags. If other files are copies of it, the earliest copy becomes the original and the rest link to that one. The stored bytes are removed only when no remaining file uses them.
+- **Why:** Chosen by the user, so test uploads and mistakes can be removed. The plan had no delete, only reject.
+- **Changes the plan:** Adds an endpoint to the API table. Deleting a file also deletes its audit trail of AI approvals; rejecting a file keeps it.

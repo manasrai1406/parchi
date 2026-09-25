@@ -1,9 +1,17 @@
 import { createColumnHelper, flexRender, tableFeatures, useTable } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { downloadUrl, useFiles, type FileStatus, type FileSummary } from "@/api/queries";
+import {
+  BUSY,
+  downloadUrl,
+  useDeleteFile,
+  useFiles,
+  type FileStatus,
+  type FileSummary,
+} from "@/api/queries";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { extensionLabel, formatUploaded } from "@/lib/format";
@@ -29,60 +37,74 @@ const CHIPS: (FileStatus | "all")[] = [
 const features = tableFeatures({});
 const column = createColumnHelper<typeof features, FileSummary>();
 
-const COLUMNS = column.columns([
-  column.display({
-    id: "file",
-    header: "File",
-    cell: ({ row: { original: file } }) => (
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-md bg-divider font-mono text-[11px] font-medium tracking-[0.04em] text-pending">
-          {extensionLabel(file.original_name)}
-        </span>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate font-mono text-sm font-medium" title={file.original_name}>
-            {file.original_name}
+function makeColumns(onDelete: (file: FileSummary) => void) {
+  return column.columns([
+    column.display({
+      id: "file",
+      header: "File",
+      cell: ({ row: { original: file } }) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-md bg-divider font-mono text-[11px] font-medium tracking-[0.04em] text-pending">
+            {extensionLabel(file.original_name)}
           </span>
-          <span className="font-mono text-xs text-muted">{file.ref_no}</span>
-          {file.error && <span className="text-[13px] text-flagged">{file.error}</span>}
-          {file.duplicate_of && (
-            <span className="text-[13px] text-muted">
-              Copy of <span className="font-mono">{file.duplicate_of.ref_no}</span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate font-mono text-sm font-medium" title={file.original_name}>
+              {file.original_name}
             </span>
-          )}
+            <span className="font-mono text-xs text-muted">{file.ref_no}</span>
+            {file.error && <span className="text-[13px] text-flagged">{file.error}</span>}
+            {file.duplicate_of && (
+              <span className="text-[13px] text-muted">
+                Copy of <span className="font-mono">{file.duplicate_of.ref_no}</span>
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-    ),
-  }),
-  column.accessor("status", {
-    header: "Status",
-    cell: (info) => <StatusBadge status={info.getValue()} />,
-  }),
-  column.accessor("uploaded_at", {
-    header: "Uploaded",
-    cell: (info) => (
-      <span className="text-[13px] text-muted">{formatUploaded(info.getValue())}</span>
-    ),
-  }),
-  column.display({
-    id: "actions",
-    header: () => <span className="block text-right">Actions</span>,
-    cell: ({ row: { original: file } }) => (
-      <div className="flex justify-end gap-2">
-        <a
-          href={downloadUrl(file)}
-          download
-          className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input bg-raised px-3.5 text-sm font-medium"
-          aria-label={`Download ${file.original_name}`}
-        >
-          <Download size={18} strokeWidth={1.8} aria-hidden="true" />
-          File
-        </a>
-      </div>
-    ),
-  }),
-]);
+      ),
+    }),
+    column.accessor("status", {
+      header: "Status",
+      cell: (info) => <StatusBadge status={info.getValue()} />,
+    }),
+    column.accessor("uploaded_at", {
+      header: "Uploaded",
+      cell: (info) => (
+        <span className="text-[13px] text-muted">{formatUploaded(info.getValue())}</span>
+      ),
+    }),
+    column.display({
+      id: "actions",
+      header: () => <span className="block text-right">Actions</span>,
+      cell: ({ row: { original: file } }) => (
+        <div className="flex justify-end gap-2">
+          <a
+            href={downloadUrl(file)}
+            download
+            className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input bg-raised px-3.5 text-sm font-medium"
+            aria-label={`Download ${file.original_name}`}
+          >
+            <Download size={18} strokeWidth={1.8} aria-hidden="true" />
+            File
+          </a>
+          <button
+            type="button"
+            onClick={() => onDelete(file)}
+            disabled={BUSY.includes(file.status)}
+            title={
+              BUSY.includes(file.status) ? "Cannot delete while it is being processed" : undefined
+            }
+            aria-label={`Delete ${file.original_name}`}
+            className="inline-flex size-11 items-center justify-center rounded-[10px] border border-input bg-raised text-flagged disabled:opacity-40"
+          >
+            <Trash2 size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+        </div>
+      ),
+    }),
+  ]);
+}
 
-const GRID = "grid grid-cols-[minmax(0,1fr)_140px_140px_160px] gap-x-4 px-6";
+const GRID = "grid grid-cols-[minmax(0,1fr)_140px_140px_180px] gap-x-4 px-6";
 
 function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -116,10 +138,22 @@ export function FilesPage() {
 
   const { data, isPending, isError, error } = useFiles({ status, q, page, pageSize: PAGE_SIZE });
 
+  const [toDelete, setToDelete] = useState<FileSummary | null>(null);
+  const deletion = useDeleteFile();
+  const columns = useMemo(
+    () =>
+      makeColumns((file) => {
+        deletion.reset();
+        setToDelete(file);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset is stable
+    [],
+  );
+
   const table = useTable({
     features,
     data: data?.items ?? [],
-    columns: COLUMNS,
+    columns,
     getRowId: (file) => String(file.id),
   });
 
@@ -250,6 +284,25 @@ export function FilesPage() {
           </div>
         </div>
       </div>
+
+      {toDelete && (
+        <ConfirmDialog
+          title={`Delete ${toDelete.original_name}?`}
+          confirmLabel="Delete"
+          busyLabel="Deleting…"
+          busy={deletion.isPending}
+          error={deletion.error instanceof Error ? deletion.error.message : null}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => deletion.mutate(toDelete, { onSuccess: () => setToDelete(null) })}
+        >
+          <p>
+            <span className="font-mono text-text">{toDelete.ref_no}</span> will be removed with
+            everything extracted from it: receipts, checks and its history, including any AI
+            approvals.
+          </p>
+          <p>Copies of this file are kept. This cannot be undone.</p>
+        </ConfirmDialog>
+      )}
     </>
   );
 }

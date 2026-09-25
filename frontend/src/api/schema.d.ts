@@ -129,7 +129,11 @@ export interface paths {
         get: operations["get_one_file_files__file_key__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Remove File
+         * @description Delete a file with its runs, receipts and flags (D-019). Not while it is processing.
+         */
+        delete: operations["remove_file_files__file_key__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -574,6 +578,53 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_file_files__file_key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

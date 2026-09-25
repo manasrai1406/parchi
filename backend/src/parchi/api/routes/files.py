@@ -2,7 +2,8 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
+from fastapi import status as http_status
 from fastapi.responses import FileResponse
 
 from parchi.api.deps import SessionDep, StorageDep
@@ -10,6 +11,7 @@ from parchi.api.errors import AppError, ErrorResponse
 from parchi.db.enums import FileStatus
 from parchi.db.models import File
 from parchi.db.repositories import get_file, list_files
+from parchi.ingestion.deletion import FileBusyError, FileNotFoundInDbError, delete_file
 from parchi.logging import bind_context, get_logger
 from parchi.schemas.api import FilePage, FileSummary
 
@@ -84,3 +86,22 @@ async def download_file(file_key: str, session: SessionDep, storage: StorageDep)
         filename=file.original_name,
         content_disposition_type="attachment",
     )
+
+
+@router.delete(
+    "/{file_key}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    responses={**NOT_FOUND, 409: {"model": ErrorResponse}},
+)
+async def remove_file(file_key: str, session: SessionDep, storage: StorageDep) -> Response:
+    """Delete a file with its runs, receipts and flags (D-019). Not while it is processing."""
+    file = await _require_file(session, file_key)
+    file_id = file.id
+    await session.rollback()  # end the read above; delete_file runs its own transaction
+    try:
+        await delete_file(session, storage, file_id)
+    except FileNotFoundInDbError as exc:
+        raise AppError(404, "file_not_found", "File not found.") from exc
+    except FileBusyError as exc:
+        raise AppError(409, "file_busy", str(exc)) from exc
+    return Response(status_code=http_status.HTTP_204_NO_CONTENT)
