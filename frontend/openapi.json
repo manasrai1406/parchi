@@ -7,7 +7,9 @@
   "paths": {
     "/health": {
       "get": {
-        "tags": ["health"],
+        "tags": [
+          "health"
+        ],
         "summary": "Health",
         "description": "The API process is up. Does not touch PostgreSQL or Redis.",
         "operationId": "health_health_get",
@@ -27,7 +29,9 @@
     },
     "/health/ready": {
       "get": {
-        "tags": ["health"],
+        "tags": [
+          "health"
+        ],
         "summary": "Ready",
         "description": "PostgreSQL and Redis are both reachable.",
         "operationId": "ready_health_ready_get",
@@ -54,10 +58,478 @@
           }
         }
       }
+    },
+    "/batches": {
+      "post": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Create Batch",
+        "operationId": "create_batch_batches_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batches/{batch_id}": {
+      "get": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Get Batch",
+        "operationId": "get_batch_batches__batch_id__get",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batches/{batch_id}/files": {
+      "post": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Upload File",
+        "description": "Register one file. An identical file is not saved unless confirm_duplicate is true.",
+        "operationId": "upload_file_batches__batch_id__files_post",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_batches__batch_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DuplicateResult"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "result",
+                    "mapping": {
+                      "registered": "#/components/schemas/RegisteredResult",
+                      "duplicate": "#/components/schemas/DuplicateResult"
+                    }
+                  },
+                  "title": "Response Upload File Batches  Batch Id  Files Post"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Identical file exists; nothing saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/files": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Get Files",
+        "operationId": "get_files_files_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FileStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name or reference",
+              "title": "Q"
+            },
+            "description": "Name or reference"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{file_key}": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Get One File",
+        "description": "One file, by id or reference number.",
+        "operationId": "get_one_file_files__file_key__get",
+        "parameters": [
+          {
+            "name": "file_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{file_key}/download": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Download File",
+        "description": "The original file, under its original name.",
+        "operationId": "download_file_files__file_key__download_get",
+        "parameters": [
+          {
+            "name": "file_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "BatchDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileSummary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "files"
+        ],
+        "title": "BatchDetail"
+      },
+      "BatchOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "BatchOut"
+      },
+      "Body_upload_file_batches__batch_id__files_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "confirm_duplicate": {
+            "type": "boolean",
+            "title": "Confirm Duplicate",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_file_batches__batch_id__files_post"
+      },
+      "DuplicateResult": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "const": "duplicate",
+            "title": "Result",
+            "default": "duplicate"
+          },
+          "duplicate_of": {
+            "$ref": "#/components/schemas/FileRef"
+          }
+        },
+        "type": "object",
+        "required": [
+          "duplicate_of"
+        ],
+        "title": "DuplicateResult",
+        "description": "Nothing was saved. Upload again with confirm_duplicate=true to keep a copy (D-015)."
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -81,8 +553,178 @@
           }
         },
         "type": "object",
-        "required": ["code", "message", "request_id"],
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
         "title": "ErrorResponse"
+      },
+      "FileKind": {
+        "type": "string",
+        "enum": [
+          "excel",
+          "csv",
+          "pdf_text",
+          "pdf_scan",
+          "image"
+        ],
+        "title": "FileKind"
+      },
+      "FilePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "FilePage"
+      },
+      "FileRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ref_no": {
+            "type": "string",
+            "title": "Ref No"
+          },
+          "original_name": {
+            "type": "string",
+            "title": "Original Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref_no",
+          "original_name"
+        ],
+        "title": "FileRef",
+        "description": "Enough to name and link to a file."
+      },
+      "FileStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "parsed",
+          "needs_review",
+          "ai_processing",
+          "flagged",
+          "resolved",
+          "rejected",
+          "failed"
+        ],
+        "title": "FileStatus"
+      },
+      "FileSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ref_no": {
+            "type": "string",
+            "title": "Ref No"
+          },
+          "original_name": {
+            "type": "string",
+            "title": "Original Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FileStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref_no",
+          "original_name",
+          "size_bytes",
+          "kind",
+          "status",
+          "error",
+          "uploaded_at",
+          "duplicate_of"
+        ],
+        "title": "FileSummary"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "HealthResponse": {
         "properties": {
@@ -93,7 +735,9 @@
           }
         },
         "type": "object",
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "HealthResponse"
       },
       "ReadyResponse": {
@@ -115,8 +759,70 @@
           }
         },
         "type": "object",
-        "required": ["status", "database", "redis"],
+        "required": [
+          "status",
+          "database",
+          "redis"
+        ],
         "title": "ReadyResponse"
+      },
+      "RegisteredResult": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "const": "registered",
+            "title": "Result",
+            "default": "registered"
+          },
+          "file": {
+            "$ref": "#/components/schemas/FileSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "RegisteredResult"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

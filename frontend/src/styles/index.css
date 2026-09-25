@@ -11,6 +11,8 @@
   --border: #1f2e28;
   --input: #2a3b34;
   --track: #24342d;
+  --divider: #1b2a24;
+  --raised: #182520;
   --text: #eaf2ee;
   --muted: #9db0a7;
   --nav: #b5c4bd;
@@ -19,9 +21,11 @@
   --on-accent: #0b0820;
   --accent-soft: #241f4d;
   --accent-text: #b9afff;
+  --accent-border: #3b3670;
 
   --success: #3ddc97;
   --success-text: #6ee7b0;
+  --success-bg: #0f3324;
   --review: #ffc766;
   --review-bg: #3a2a0b;
   --flagged: #ff9c8a;
@@ -30,6 +34,7 @@
   --processing-bg: #12283f;
   --pending: #b9c7c0;
   --pending-bg: #222e29;
+  --queued: #7a8c84;
   --resolved: #9bddbc;
   --resolved-border: #3d6152;
 
@@ -43,6 +48,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-track: var(--track);
+  --color-divider: var(--divider);
+  --color-raised: var(--raised);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-nav: var(--nav);
@@ -51,9 +58,11 @@
   --color-on-accent: var(--on-accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-text: var(--accent-text);
+  --color-accent-border: var(--accent-border);
 
   --color-success: var(--success);
   --color-success-text: var(--success-text);
+  --color-success-bg: var(--success-bg);
   --color-review: var(--review);
   --color-review-bg: var(--review-bg);
   --color-flagged: var(--flagged);
@@ -62,6 +71,7 @@
   --color-processing-bg: var(--processing-bg);
   --color-pending: var(--pending);
   --color-pending-bg: var(--pending-bg);
+  --color-queued: var(--queued);
   --color-resolved: var(--resolved);
   --color-resolved-border: var(--resolved-border);
 
