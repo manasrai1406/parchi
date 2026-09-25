@@ -9,13 +9,18 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
-from parchi.config import get_settings
+from parchi.config import AppEnv, get_settings
 
 
 @lru_cache
 def get_engine() -> AsyncEngine:
-    return create_async_engine(get_settings().database_url, pool_pre_ping=True)
+    settings = get_settings()
+    if settings.app_env == AppEnv.TEST:
+        # Tests run several event loops; pooled connections cannot cross them.
+        return create_async_engine(settings.database_url, poolclass=NullPool)
+    return create_async_engine(settings.database_url, pool_pre_ping=True)
 
 
 @lru_cache

@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     storage_dir: Path = Path("data/uploads")
 
+    # Upload limits (D-016).
+    max_upload_mb: int = Field(default=20, ge=1, le=500)
+    max_files_per_batch: int = Field(default=50, ge=1, le=1000)
+
     log_level: str = "info"
     log_dir: Path | None = Path("logs")
 
@@ -72,6 +76,10 @@ class Settings(BaseSettings):
     @classmethod
     def _empty_is_none(cls, value: object) -> object:
         return None if value == "" else value
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.max_upload_mb * 1024 * 1024
 
     @property
     def tz(self) -> ZoneInfo:

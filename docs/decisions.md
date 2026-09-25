@@ -113,3 +113,28 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   5. When the API runs natively on Windows, uvicorn is started with `--loop asyncio:SelectorEventLoop`, because psycopg's async mode cannot use Windows' default Proactor loop. Docker (Linux) is unaffected.
   6. `/health/ready` powers a "System" card at the bottom of the sidebar. The "AI approved today" card from the design comes in Phase 6, when `GET /ai/usage` exists.
 - **Why:** These came up while building Phase 1 and are recorded so later phases do not undo them by accident.
+
+## D-015 Confirming a duplicate re-sends the file
+
+- **Date:** 2026-09-26 (Phase 2)
+- **Decision:** When an upload matches an existing file's SHA-256, the API saves nothing and answers with the matching file (id, reference number, name). If the person chooses to save it anyway, the browser uploads the file again with `confirm_duplicate=true`. The new row's `duplicate_of_id` points to the earliest file with that hash, and it shares the stored bytes.
+- **Why:** Chosen by the user. It keeps the server stateless: nothing is held while the person decides.
+
+## D-016 Upload limits and accepted types
+
+- **Date:** 2026-09-26 (Phase 2)
+- **Decision:** At most 20 MB per file and 50 files per batch (settings `MAX_UPLOAD_MB` and `MAX_FILES_PER_BATCH`). At upload, only these extensions are accepted: `.pdf`, `.jpg`, `.jpeg`, `.png`, `.webp`, `.heic`, `.xlsx`, `.xls`, `.csv`. Anything else is refused at once. Phase 3 still checks the real bytes, so a renamed file is caught there.
+- **Why:** 20 MB matches the design copy. Refusing unsupported files early gives a clearer message than a later `unreadable` flag.
+
+## D-017 One upload request per file
+
+- **Date:** 2026-09-26 (Phase 2)
+- **Decision:** `POST /batches` creates an empty batch. Each file is then sent on its own to `POST /batches/{id}/files`. This replaces the plan's single `POST /batches` carrying every file.
+- **Why:** Real progress per file, and one failed file does not fail the rest of the batch.
+- **Changes the plan:** The API table in PLAN.md.
+
+## D-018 Registering the same bytes twice at the same moment
+
+- **Date:** 2026-09-26 (Phase 2)
+- **Decision:** Register takes a PostgreSQL advisory lock on the file's hash for the length of its transaction. Two simultaneous identical uploads are therefore handled one after the other: the first is saved, the second is reported as a duplicate. Stored bytes are removed after a failed insert only when no row points at them.
+- **Why:** `sha256` is not unique any more (D-006), so the database cannot catch this race on its own.

@@ -72,3 +72,47 @@ def conn(engine: Engine, migrated: str) -> Iterator[Connection]:
         transaction = connection.begin()
         yield connection
         transaction.rollback()
+
+
+def _clear_app_caches() -> None:
+    from parchi.api import deps
+    from parchi.config import get_settings
+    from parchi.db import session as db_session
+
+    get_settings.cache_clear()
+    db_session.get_engine.cache_clear()
+    db_session.get_sessionmaker.cache_clear()
+    deps._storage_for.cache_clear()
+
+
+@pytest.fixture
+def storage_dir(tmp_path) -> str:
+    return str(tmp_path / "uploads")
+
+
+@pytest.fixture
+def api(engine: Engine, migrated: str, storage_dir: str, monkeypatch: pytest.MonkeyPatch):
+    """A TestClient for the real app, on an emptied test database and a temporary storage dir."""
+    import asyncio
+    import sys
+
+    from fastapi.testclient import TestClient
+
+    from parchi.api.main import create_app
+    from parchi.db.models import ALL_TABLES
+
+    with engine.begin() as connection:
+        connection.execute(text(f"TRUNCATE {', '.join(ALL_TABLES)} RESTART IDENTITY CASCADE"))
+        connection.execute(text("ALTER SEQUENCE file_ref_seq RESTART"))
+
+    monkeypatch.setenv("APP_ENV", "test")
+    monkeypatch.setenv("DATABASE_URL", migrated)
+    monkeypatch.setenv("STORAGE_DIR", storage_dir)
+    monkeypatch.setenv("LOG_DIR", "")
+    _clear_app_caches()
+
+    # psycopg's async mode cannot run on Windows' default Proactor event loop.
+    options = {"loop_factory": asyncio.SelectorEventLoop} if sys.platform == "win32" else {}
+    with TestClient(create_app(), backend_options=options) as client:
+        yield client
+    _clear_app_caches()

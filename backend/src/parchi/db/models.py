@@ -99,6 +99,7 @@ class File(IdMixin, TimestampMixin, Base):
     error: Mapped[str | None] = mapped_column(sa.Text)
 
     batch: Mapped[UploadBatch] = relationship(back_populates="files", lazy="raise")
+    duplicate_of: Mapped["File | None"] = relationship(remote_side="File.id", lazy="raise")
     runs: Mapped[list["ExtractionRun"]] = relationship(back_populates="file", lazy="raise")
     receipts: Mapped[list["Receipt"]] = relationship(
         back_populates="file", lazy="raise", order_by="Receipt.seq"
