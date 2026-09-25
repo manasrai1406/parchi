@@ -110,9 +110,17 @@ def api(engine: Engine, migrated: str, storage_dir: str, monkeypatch: pytest.Mon
     monkeypatch.setenv("STORAGE_DIR", storage_dir)
     monkeypatch.setenv("LOG_DIR", "")
     _clear_app_caches()
+    # Uploads queue files for the worker; tests record the calls instead of using Redis.
+    queued: list[int] = []
+
+    async def record(file_id: int) -> None:
+        queued.append(file_id)
+
+    monkeypatch.setattr("parchi.api.routes.batches.queue_file", record)
 
     # psycopg's async mode cannot run on Windows' default Proactor event loop.
     options = {"loop_factory": asyncio.SelectorEventLoop} if sys.platform == "win32" else {}
     with TestClient(create_app(), backend_options=options) as client:
+        client.queued = queued  # type: ignore[attr-defined]
         yield client
     _clear_app_caches()

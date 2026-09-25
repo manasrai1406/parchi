@@ -145,3 +145,45 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** Files can be deleted with `DELETE /files/{id or ref}`, from a Delete button on the Files page that asks for confirmation. Any file can be deleted except while it is `processing` or `ai_processing`. Deleting removes the file row and everything that belongs to it: extraction runs (including AI approval records), receipts, line items and flags. If other files are copies of it, the earliest copy becomes the original and the rest link to that one. The stored bytes are removed only when no remaining file uses them.
 - **Why:** Chosen by the user, so test uploads and mistakes can be removed. The plan had no delete, only reject.
 - **Changes the plan:** Adds an endpoint to the API table. Deleting a file also deletes its audit trail of AI approvals; rejecting a file keeps it.
+
+## D-020 Synthetic samples until real ones arrive
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** Phase 3 is built and tested against generated receipts in varied formats: Indian GST tax invoices, retail and fuel receipts, rupee symbols, Indian digit grouping, several date styles, single-sheet and multi-sheet workbooks, CSVs with different delimiters and encodings, one-page, multi-page and multi-receipt PDFs. `backend/scripts/make_samples.py` writes them, with their expected answers, to `data/samples/synthetic/` so they can also be uploaded by hand. The rules will be tuned on the user's real samples when they arrive.
+- **Why:** Chosen by the user. No real samples exist yet.
+
+## D-021 Spreadsheet layout: one receipt per sheet
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** The Excel/CSV extractor reads form-style invoices: label and value cells (for example `Invoice No:` then `INV-0421`, beside or below the label) plus an items table, one receipt per sheet. A CSV is one sheet. Sheets with no recognisable receipt, such as notes, are skipped. Expense logs with one row per receipt, or one row per line item, are not recognised in this phase and go to `needs_review`.
+- **Why:** Chosen by the user.
+
+## D-022 Splitting multi-page PDFs by content
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** In a text PDF, a page starts a new receipt when it carries its own header: a bill or invoice number, or a document title such as "Tax Invoice" or "Receipt" near the top. Pages without one continue the previous receipt. A one-page PDF is one receipt.
+- **Why:** Chosen by the user. A two-page invoice stays whole, and a PDF of several bills is split.
+
+## D-023 xlrd for legacy .xls files
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** Add `xlrd` to read `.xls` files. `pandas` and `openpyxl` (for `.xlsx`) and `pdfplumber` (for text PDFs) come from the planned stack.
+- **Why:** Chosen by the user. `.xls` is accepted at upload (D-016) and should work end to end.
+
+## D-024 Phase 3 extraction rules
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:**
+  1. Dates are read day-first (`03/04/2026` is 3 April), as in India. ISO dates (`2026-04-03`) and month names are also understood.
+  2. Until Phase 4 brings full validation, a file is `parsed` when every receipt in it has a vendor, a date and a total, and its confidence meets the threshold for its file type (set in config). Otherwise it goes to `needs_review`, and its result is kept on the extraction run.
+  3. A vendor's normalized name starts as the printed name with spacing and stray punctuation tidied. Merging different spellings of one vendor comes later.
+  4. Scanned PDFs and images are detected but not read until Phase 5. They wait in `needs_review` with a note, and no extraction run is recorded, so Phase 5 can still record their one library run.
+  5. A file whose bytes cannot be opened (corrupt, password-protected or empty) is `flagged` with an `unreadable` flag and never retried.
+  6. PyMuPDF is not used in Phase 3. It is licensed under the AGPL, which matters if Parchi is ever distributed as closed source. The choice of page renderer is revisited in Phase 5.
+- **Why:** Sensible defaults recorded here so they can be revisited when real samples arrive.
+
+## D-025 Background worker and recovery
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** An ARQ worker on Redis processes files. The API queues a job after a file is registered; the job id is `process-<file id>`, so the same file is never queued twice. A worker claims a file by moving it from `pending` (or `failed`) to `processing` in one statement, so two workers cannot take the same file. A job times out after 5 minutes. Every minute a recovery task re-queues `pending` files, puts files stuck in `processing` for over 10 minutes back to `pending`, and retries `failed` files with backoff, up to 3 attempts. If Redis is down at upload time, the file stays `pending` and recovery queues it later.
+- **Why:** Hard rule 5 needs a recovery job, and it costs little to have it from the start.

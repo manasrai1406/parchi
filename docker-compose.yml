@@ -1,4 +1,4 @@
-# Local development stack. The ARQ worker joins in phase 3 (D-013).
+# Local development stack.
 name: parchi
 
 services:
@@ -67,6 +67,28 @@ services:
       interval: 10s
       timeout: 3s
       retries: 6
+
+  worker:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/parchi
+      REDIS_URL: redis://redis:6379
+      STORAGE_DIR: /data/uploads
+      LOG_DIR: /app/logs
+    # Reloads when backend code changes. The API runs the migrations first.
+    command: arq --watch src parchi.worker.WorkerSettings
+    volumes:
+      - ./backend/src:/app/src
+      - ./data/uploads:/data/uploads
+      - ./logs:/app/logs
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

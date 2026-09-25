@@ -11,6 +11,7 @@ from parchi.api.routes import batches, files, health
 from parchi.config import get_settings
 from parchi.db.session import get_engine
 from parchi.logging import configure_logging, get_logger
+from parchi.pipeline.queue import close_pool
 
 log = get_logger(__name__)
 
@@ -20,6 +21,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     log.info("api.started", env=settings.app_env.value, ai_enabled=settings.ai_enabled)
     yield
+    await close_pool()
     await get_engine().dispose()
     log.info("api.stopped")
 

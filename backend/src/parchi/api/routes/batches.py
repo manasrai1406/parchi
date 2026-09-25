@@ -25,6 +25,7 @@ from parchi.ingestion.registry import (
 )
 from parchi.ingestion.storage import FileTooLargeError
 from parchi.logging import bind_context, get_logger
+from parchi.pipeline.queue import queue_file
 from parchi.schemas.api import (
     BatchDetail,
     BatchOut,
@@ -133,5 +134,6 @@ async def upload_file(
         response.status_code = status.HTTP_200_OK
         return DuplicateResult(duplicate_of=FileRef.model_validate(outcome.original))
 
+    await queue_file(outcome.file.id)
     file = await get_file(session, outcome.file.id)
     return RegisteredResult(file=FileSummary.model_validate(file))
