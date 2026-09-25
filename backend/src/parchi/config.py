@@ -24,7 +24,8 @@ def to_async_url(url: str) -> str:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # The repo-root .env is read when running from backend/; a local .env overrides it.
+    model_config = SettingsConfigDict(env_file=("../.env", ".env"), extra="ignore")
 
     app_env: AppEnv = AppEnv.DEVELOPMENT
     app_timezone: str = "Asia/Kolkata"

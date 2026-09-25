@@ -101,3 +101,15 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   13. Versions: Python 3.12, PostgreSQL 16, Redis 7, Node 22, Tailwind v4.
   14. Tax is one column, with no CGST/SGST/IGST split and no GSTIN.
 - **Why:** Proposed during Phase 1 planning and accepted as a group.
+
+## D-014 Phase 1 tooling details
+
+- **Date:** 2026-09-26 (Phase 1)
+- **Decision:**
+  1. The frontend calls the API under `/api`. The Vite dev server forwards `/api/*` to FastAPI with the prefix removed, so no CORS setup is needed.
+  2. API types are generated from FastAPI's OpenAPI spec. `backend/scripts/export_openapi.py` writes `frontend/openapi.json` without starting a server, and `openapi-typescript` turns it into `frontend/src/api/schema.d.ts`. Both files are committed.
+  3. Theme C colors are CSS variables mapped into Tailwind v4 `@theme` tokens, so a light theme only has to override the variables.
+  4. Pinned versions: TypeScript `~5.9`, because `openapi-typescript` needs TypeScript 5. jsdom `^26`, because jsdom 27 needs Node 22.12 or newer.
+  5. When the API runs natively on Windows, uvicorn is started with `--loop asyncio:SelectorEventLoop`, because psycopg's async mode cannot use Windows' default Proactor loop. Docker (Linux) is unaffected.
+  6. `/health/ready` powers a "System" card at the bottom of the sidebar. The "AI approved today" card from the design comes in Phase 6, when `GET /ai/usage` exists.
+- **Why:** These came up while building Phase 1 and are recorded so later phases do not undo them by accident.
