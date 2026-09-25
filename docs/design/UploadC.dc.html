@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Upload receipts, dark sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#0B1210}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width:1440px;height:1160px;display:flex;background:#0B1210;color:#EAF2EE;font-family:'DM Sans',system-ui,sans-serif;font-size:15px">
+
+<aside style="width:240px;flex-shrink:0;box-sizing:border-box;background:#0F1815;border-right:1px solid #1F2E28;padding:24px 16px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px">
+<div style="width:34px;height:34px;border-radius:10px;background:#8B7CF6;color:#0B0820;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg></div>
+<span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.01em">Parchi</span>
+</div>
+<nav aria-label="Main" style="display:flex;flex-direction:column;gap:4px">
+<a href="UploadC.dc.html" aria-current="page" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;background:#241F4D;color:#B9AFFF;font-weight:600;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span>Upload</span></a>
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg><span>Files</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="ReviewC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l2 2 4-4"/></svg><span>Review</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="QueryC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><span>Query</span></a>
+</nav>
+<div style="margin-top:auto;background:#121C18;border:1px solid #1F2E28;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:12px;color:#9DB0A7">AI approved today</span>
+<span style="font-size:15px;font-weight:600">12 of 50</span>
+<div style="height:6px;border-radius:3px;background:#24342D"><div style="width:24%;height:6px;border-radius:3px;background:#8B7CF6"></div></div>
+<span style="font-size:12px;color:#9DB0A7">AI runs only when you approve it.</span>
+</div>
+</aside>
+
+<main style="flex-grow:1;min-width:0;box-sizing:border-box;padding:40px 48px;display:flex;flex-direction:column;gap:28px">
+<div>
+<div style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#B9AFFF">New batch</div>
+<h1 style="margin:6px 0 0;font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:600;letter-spacing:-0.02em">Upload receipts</h1>
+<p style="margin:8px 0 0;color:#9DB0A7;font-size:16px">PDFs, photos and spreadsheets. Each file is registered, parsed and checked automatically.</p>
+</div>
+
+<div style="display:flex;gap:24px;align-items:flex-start">
+<div style="flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:24px">
+
+<div style="height:264px;box-sizing:border-box;border:2px dashed #3B3670;border-radius:16px;background:#0F1815;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center">
+<div style="width:56px;height:56px;border-radius:50%;background:#241F4D;color:#B9AFFF;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
+<div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600">Drag files here</div>
+<div style="display:flex;align-items:center;gap:12px;color:#9DB0A7;font-size:14px">
+<span>or</span>
+<button type="button" style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#8B7CF6;color:#0B0820;font:600 14px 'DM Sans',sans-serif;cursor:pointer">Browse files</button>
+</div>
+<div style="font-size:13px;color:#9DB0A7">PDF, JPG, PNG, XLSX, CSV. Up to 20 MB per file.</div>
+</div>
+
+<div style="background:#121C18;border:1px solid #1F2E28;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid #1F2E28">
+<span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600">This batch</span>
+<a href="Main.dc.html" style="display:inline-flex;align-items:center;height:44px;font-size:14px;font-weight:600;color:#B9AFFF">View in Files</a>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:24px;align-items:center;padding:14px 24px;min-height:72px;box-sizing:border-box;border-bottom:1px solid #1B2A24">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">inv_0421.pdf</span><span style="font-size:13px;color:#9DB0A7">REF-2026-000420 · 184 KB · Parsed with pdfplumber</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:6px;border-radius:3px;background:#24342D"><div style="width:100%;height:6px;border-radius:3px;background:#3DDC97"></div></div><span style="font-size:13px;font-weight:600;color:#6EE7B0">Done</span></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:24px;align-items:center;padding:14px 24px;min-height:72px;box-sizing:border-box;border-bottom:1px solid #1B2A24">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">photo_88.jpg</span><span style="font-size:13px;color:#9DB0A7">REF-2026-000419 · 2.4 MB · Reading text (OCR)</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:6px;border-radius:3px;background:#24342D"><div style="width:60%;height:6px;border-radius:3px;background:#8FC3FF"></div></div><span style="font-size:13px;font-weight:600;color:#8FC3FF">Extracting</span></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:24px;align-items:center;padding:14px 24px;min-height:72px;box-sizing:border-box;border-bottom:1px solid #1B2A24">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">march_expenses.xlsx</span><span style="font-size:13px;color:#9DB0A7">REF-2026-000417 · 96 KB · Checking totals and sequence</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:6px;border-radius:3px;background:#24342D"><div style="width:85%;height:6px;border-radius:3px;background:#8FC3FF"></div></div><span style="font-size:13px;font-weight:600;color:#8FC3FF">Validating</span></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:24px;align-items:center;padding:14px 24px;min-height:72px;box-sizing:border-box;border-bottom:1px solid #1B2A24">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">fuel_bill_sep.pdf</span><span style="font-size:13px;color:#9DB0A7">REF-2026-000421 · 312 KB · Waiting for a worker</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:6px;border-radius:3px;background:#24342D"><div style="width:4%;height:6px;border-radius:3px;background:#7A8C84"></div></div><span style="font-size:13px;font-weight:600;color:#B9C7C0">Queued</span></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;column-gap:24px;align-items:center;padding:14px 24px;min-height:72px;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">inv_0421_copy.pdf</span><span style="font-size:13px;color:#FFC766">Identical to inv_0421.pdf (REF-2026-000420), skipped</span></div>
+<div><span style="display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:999px;background:#3A2A0B;color:#FFC766;font-size:13px;font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:currentColor"></span>Duplicate</span></div>
+</div>
+</div>
+</div>
+
+<aside style="width:320px;flex-shrink:0;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600">What happens to a file</h2>
+<ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:18px">
+<li style="display:flex;gap:14px"><span style="width:28px;height:28px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:1px solid #8B7CF6;background:#0F1815;color:#B9AFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">1</span><div><div style="font-weight:600">Register</div><div style="margin-top:2px;font-size:14px;color:#9DB0A7;line-height:1.45">The file is hashed, stored and given a reference number. An identical file is skipped as a duplicate.</div></div></li>
+<li style="display:flex;gap:14px"><span style="width:28px;height:28px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:1px solid #8B7CF6;background:#0F1815;color:#B9AFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">2</span><div><div style="font-weight:600">Extract with libraries</div><div style="margin-top:2px;font-size:14px;color:#9DB0A7;line-height:1.45">pdfplumber, pandas or OCR read the vendor, date, items and totals.</div></div></li>
+<li style="display:flex;gap:14px"><span style="width:28px;height:28px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:1px solid #8B7CF6;background:#0F1815;color:#B9AFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">3</span><div><div style="font-weight:600">Validate</div><div style="margin-top:2px;font-size:14px;color:#9DB0A7;line-height:1.45">Line items must add up. Receipt numbers and dates must be in sequence.</div></div></li>
+<li style="display:flex;gap:14px"><span style="width:28px;height:28px;flex-shrink:0;box-sizing:border-box;border-radius:50%;border:1px solid #8B7CF6;background:#0F1815;color:#B9AFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">4</span><div><div style="font-weight:600">AI only if you approve</div><div style="margin-top:2px;font-size:14px;color:#9DB0A7;line-height:1.45">Files that fail checks wait in Needs review. Nothing is sent to Claude or OpenAI until you approve it.</div></div></li>
+</ol>
+</aside>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

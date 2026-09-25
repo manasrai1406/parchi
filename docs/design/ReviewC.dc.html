@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Review flagged file, dark sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#0B1210}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width:1440px;height:1160px;display:flex;background:#0B1210;color:#EAF2EE;font-family:'DM Sans',system-ui,sans-serif;font-size:15px">
+
+<aside style="width:240px;flex-shrink:0;box-sizing:border-box;background:#0F1815;border-right:1px solid #1F2E28;padding:24px 16px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px">
+<div style="width:34px;height:34px;border-radius:10px;background:#8B7CF6;color:#0B0820;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg></div>
+<span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.01em">Parchi</span>
+</div>
+<nav aria-label="Main" style="display:flex;flex-direction:column;gap:4px">
+<a href="UploadC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span>Upload</span></a>
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg><span>Files</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="ReviewC.dc.html" aria-current="page" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;background:#241F4D;color:#B9AFFF;font-weight:600;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l2 2 4-4"/></svg><span>Review</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="QueryC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><span>Query</span></a>
+</nav>
+<div style="margin-top:auto;background:#121C18;border:1px solid #1F2E28;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:12px;color:#9DB0A7">AI approved today</span>
+<span style="font-size:15px;font-weight:600">12 of 50</span>
+<div style="height:6px;border-radius:3px;background:#24342D"><div style="width:24%;height:6px;border-radius:3px;background:#8B7CF6"></div></div>
+<span style="font-size:12px;color:#9DB0A7">AI runs only when you approve it.</span>
+</div>
+</aside>
+
+<main style="flex-grow:1;min-width:0;box-sizing:border-box;padding:28px 48px 36px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<a href="Main.dc.html" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:14px;font-weight:500;color:#B9AFFF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Back to Files</a>
+<div style="display:flex;align-items:center;gap:14px">
+<h1 style="margin:0;font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:500;letter-spacing:-0.02em">photo_88.jpg</h1>
+<span style="display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:600;background:#3A2A0B;color:#FFC766"><span style="width:8px;height:8px;border-radius:50%;background:currentColor"></span>Flagged</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#9DB0A7">REF-2026-000419</span>
+</div>
+</div>
+
+<div style="display:flex;gap:24px;align-items:flex-start">
+
+<section aria-label="Original file" style="width:360px;flex-shrink:0;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 20px;height:60px;border-bottom:1px solid #1F2E28">
+<span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600">Original file</span>
+<button type="button" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:10px;font:500 14px 'DM Sans',sans-serif;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Download</button>
+</div>
+<div style="background:#0F1815;display:flex;justify-content:center;align-items:flex-start;padding:32px 20px">
+<div role="img" aria-label="Preview of the photographed receipt" style="width:290px;box-sizing:border-box;background:#F4F1E8;padding:24px 18px;box-shadow:0 6px 18px rgba(0,0,0,0.5);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#1B1F24;white-space:pre">BALAJI TRADERS
+Station Road, Kanpur
+----------------------------
+Bill No : INV-0088
+Date    : 14/09/2026
+----------------------------
+Notebook A4   4 x 120  480.00
+Ball pens    10 x  18  180.00
+Stapler       1 x 350  350.00
+Marker set    2 x 180  360.00
+----------------------------
+Subtotal            1,370.00
+GST 5%                 68.50
+TOTAL               1,438.50
+----------------------------
+  Thank you, visit again</div>
+</div>
+</section>
+
+<div style="flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:18px">
+
+<div role="alert" style="display:flex;gap:14px;align-items:flex-start;padding:16px 20px;border-radius:16px;background:#2B2109;border:1px solid #5A4310;color:#FFD98A">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;margin-top:1px"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>
+<div><div style="font-weight:600;font-size:15px">Parser conflict: the date differs</div><div style="margin-top:2px;font-size:14px;line-height:1.45;color:#E8CB8E">Both results pass validation but disagree, so neither was accepted. Choose one or type the right value. Until then this file is left out of sequence checks and totals.</div></div>
+</div>
+
+<section aria-label="Compare results" style="background:#121C18;border:1px solid #1F2E28;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:12px 20px;background:#0F1815;border-bottom:1px solid #1F2E28;align-items:end">
+<span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9DB0A7">Field</span>
+<div style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Library result</span><span style="font-size:12px;color:#9DB0A7">OCR + rules · 71%</span></div>
+<div style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">AI result</span><span style="font-size:12px;color:#9DB0A7">Claude · 93%</span></div>
+<div style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Final value</span><span style="font-size:12px;color:#9DB0A7">Saved as the receipt</span></div>
+</div>
+
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:6px 20px;min-height:56px;align-items:center;border-bottom:1px solid #1B2A24">
+<span style="font-size:14px;color:#B5C4BD">Vendor</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">Balaji Traders</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">Balaji Traders</span>
+<input type="text" value="Balaji Traders" aria-label="Final vendor" style="height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:8px;background:#0F1815;color:#EAF2EE;font:400 13px 'JetBrains Mono',monospace;min-width:0">
+</div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:6px 20px;min-height:56px;align-items:center;border-bottom:1px solid #1B2A24">
+<span style="font-size:14px;color:#B5C4BD">Receipt no.</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">INV-0088</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">INV-0088</span>
+<input type="text" value="INV-0088" aria-label="Final receipt number" style="height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:8px;background:#0F1815;color:#EAF2EE;font:400 13px 'JetBrains Mono',monospace;min-width:0">
+</div>
+
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:8px 20px;min-height:72px;align-items:center;border-bottom:1px solid #1B2A24;background:#241C08">
+<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><span style="font-size:14px;font-weight:600;color:#EAF2EE">Date</span><span style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#3A2A0B;color:#FFC766">Differs</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">2026-09-04</span><button type="button" style="height:32px;padding:0 12px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:8px;font:500 12px 'DM Sans',sans-serif;cursor:pointer">Use this</button></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">2026-09-14</span><button type="button" style="height:32px;padding:0 12px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:8px;font:500 12px 'DM Sans',sans-serif;cursor:pointer">Use this</button></div>
+<input type="text" placeholder="Pick or type a date" aria-label="Final date" style="height:44px;box-sizing:border-box;padding:0 12px;border:2px solid #E0A21A;border-radius:8px;background:#0F1815;color:#EAF2EE;font:400 13px 'JetBrains Mono',monospace;min-width:0">
+</div>
+
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:6px 20px;min-height:56px;align-items:center;border-bottom:1px solid #1B2A24">
+<span style="font-size:14px;color:#B5C4BD">Subtotal</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">₹1,370.00</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">₹1,370.00</span>
+<input type="text" value="1370.00" aria-label="Final subtotal" style="height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:8px;background:#0F1815;color:#EAF2EE;font:400 13px 'JetBrains Mono',monospace;text-align:right;min-width:0">
+</div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:6px 20px;min-height:56px;align-items:center;border-bottom:1px solid #1B2A24">
+<span style="font-size:14px;color:#B5C4BD">Tax (GST 5%)</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">₹68.50</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px">₹68.50</span>
+<input type="text" value="68.50" aria-label="Final tax" style="height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:8px;background:#0F1815;color:#EAF2EE;font:400 13px 'JetBrains Mono',monospace;text-align:right;min-width:0">
+</div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);column-gap:16px;padding:6px 20px;min-height:56px;align-items:center">
+<span style="font-size:14px;color:#B5C4BD">Total</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">₹1,438.50</span>
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">₹1,438.50</span>
+<input type="text" value="1438.50" aria-label="Final total" style="height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:8px;background:#0F1815;color:#EAF2EE;font:500 13px 'JetBrains Mono',monospace;text-align:right;min-width:0">
+</div>
+</section>
+
+<section aria-label="Line items" style="background:#121C18;border:1px solid #1F2E28;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;border-bottom:1px solid #1F2E28">
+<span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600">Line items</span>
+<span style="display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:600;background:#0F3324;color:#6EE7B0"><span style="width:8px;height:8px;border-radius:50%;background:currentColor"></span>Items add up to the total</span>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 60px 110px 110px;column-gap:16px;padding:0 20px;height:38px;align-items:center;background:#0F1815;border-bottom:1px solid #1F2E28;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9DB0A7"><span>Description</span><span style="text-align:right">Qty</span><span style="text-align:right">Unit price</span><span style="text-align:right">Amount</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 60px 110px 110px;column-gap:16px;padding:0 20px;height:42px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span>Notebook A4</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">4</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">120.00</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">480.00</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 60px 110px 110px;column-gap:16px;padding:0 20px;height:42px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span>Ball pens</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">10</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">18.00</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">180.00</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 60px 110px 110px;column-gap:16px;padding:0 20px;height:42px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span>Stapler</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">1</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">350.00</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">350.00</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 60px 110px 110px;column-gap:16px;padding:0 20px;height:42px;align-items:center;font-size:14px"><span>Marker set</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">2</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">180.00</span><span style="text-align:right;font-family:'JetBrains Mono',monospace">360.00</span></div>
+</section>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;align-items:center;gap:8px">
+<label for="provider" style="font-size:14px;color:#B5C4BD">Try another provider</label>
+<select id="provider" style="height:44px;padding:0 10px;border:1px solid #2A3B34;border-radius:10px;background:#182520;color:#EAF2EE;font:500 14px 'DM Sans',sans-serif"><option>OpenAI</option><option>Claude</option></select>
+<a href="AiConfirmC.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 14px;border:1px solid #3B3670;background:#241F4D;color:#B9AFFF;border-radius:10px;font:600 14px 'DM Sans',sans-serif">Extract with AI...</a>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button type="button" style="height:44px;padding:0 14px;border:1px solid #2A3B34;background:#182520;color:#FF9C8A;border-radius:10px;font:500 14px 'DM Sans',sans-serif;cursor:pointer">Reject file</button>
+<button type="button" style="height:44px;padding:0 18px;border:none;background:#8B7CF6;color:#0B0820;border-radius:10px;font:600 14px 'DM Sans',sans-serif;cursor:pointer">Accept and resolve</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Approve AI for a batch</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#070C0A}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width:720px;height:720px;box-sizing:border-box;padding:40px;display:flex;align-items:center;justify-content:center;background:#070C0A;color:#EAF2EE;font-family:'DM Sans',system-ui,sans-serif;font-size:15px">
+<div role="dialog" aria-labelledby="dlg-title" style="width:640px;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:18px">
+
+<div style="display:flex;align-items:flex-start;gap:14px">
+<div style="width:44px;height:44px;flex-shrink:0;border-radius:12px;background:#241F4D;color:#B9AFFF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.7 1.8L21.5 18.5l-1.8.7L19 21l-.7-1.8L16.5 18.5l1.8-.7z"/></svg></div>
+<div>
+<h2 id="dlg-title" style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;letter-spacing:-0.01em">Extract 2 files with AI?</h2>
+<p style="margin:4px 0 0;font-size:14px;line-height:1.45;color:#9DB0A7">One approval covers every file listed here. Files you did not select are not sent.</p>
+</div>
+</div>
+
+<div style="border-radius:12px;background:#0F1815;border:1px solid #1F2E28;overflow:hidden">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #1B2A24">
+<span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:28px;flex-shrink:0;border-radius:6px;background:#1B2A24;color:#B9C7C0;font:500 11px 'JetBrains Mono',monospace;letter-spacing:0.04em">JPG</span>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">receipt_1204.jpg</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9DB0A7">REF-2026-000418</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+<span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:28px;flex-shrink:0;border-radius:6px;background:#1B2A24;color:#B9C7C0;font:500 11px 'JetBrains Mono',monospace;letter-spacing:0.04em">PNG</span>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500">tea_stall.png</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9DB0A7">REF-2026-000415</span></div>
+</div>
+</div>
+
+<fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:10px">
+<legend style="padding:0;margin-bottom:10px;font-size:13px;font-weight:600;color:#B5C4BD">Choose a provider</legend>
+<div style="display:flex;gap:12px">
+<label style="flex:1;box-sizing:border-box;display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border-radius:12px;border:1px solid #8B7CF6;background:#1A1740;cursor:pointer"><input type="radio" name="provider" checked style="width:18px;height:18px;margin:0;accent-color:#8B7CF6"><div><div style="font-weight:600">Claude</div><div style="font-size:13px;color:#9DB0A7">Anthropic</div></div></label>
+<label style="flex:1;box-sizing:border-box;display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border-radius:12px;border:1px solid #2A3B34;background:#0F1815;cursor:pointer"><input type="radio" name="provider" style="width:18px;height:18px;margin:0;accent-color:#8B7CF6"><div><div style="font-weight:600">OpenAI</div><div style="font-size:13px;color:#9DB0A7">OpenAI</div></div></label>
+</div>
+</fieldset>
+
+<div style="padding:14px 16px;border-radius:12px;background:#0F1815;border:1px solid #1F2E28;display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;font-weight:600;color:#B5C4BD">What gets sent</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.45;color:#EAF2EE">
+<li>The 2 original files listed above go to the provider you choose.</li>
+<li>Nothing is sent until you press Approve and extract.</li>
+<li>Each result is saved as a new run, so the library results are kept.</li>
+</ul>
+</div>
+
+<label style="display:flex;align-items:flex-start;gap:12px;min-height:44px;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:#8B7CF6"><span style="font-size:14px;line-height:1.45">I approve sending these 2 files to the selected provider.</span></label>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+<span style="font-size:13px;color:#9DB0A7">Uses 2 of your 38 remaining approvals today.</span>
+<div style="display:flex;gap:10px">
+<a href="Main.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 18px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:10px;font:500 14px 'DM Sans',sans-serif">Cancel</a>
+<button type="button" style="height:44px;padding:0 20px;border:none;background:#8B7CF6;color:#0B0820;border-radius:10px;font:600 14px 'DM Sans',sans-serif;cursor:pointer">Approve and extract</button>
+</div>
+</div>
+<div style="font-size:12px;color:#9DB0A7">Your approval is recorded with your name, the time and the provider.</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":720,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

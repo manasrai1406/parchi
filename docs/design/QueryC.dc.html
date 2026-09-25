@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Query receipts, dark sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#0B1210}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width:1440px;height:1160px;display:flex;background:#0B1210;color:#EAF2EE;font-family:'DM Sans',system-ui,sans-serif;font-size:15px">
+
+<aside style="width:240px;flex-shrink:0;box-sizing:border-box;background:#0F1815;border-right:1px solid #1F2E28;padding:24px 16px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 8px">
+<div style="width:34px;height:34px;border-radius:10px;background:#8B7CF6;color:#0B0820;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg></div>
+<span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.01em">Parchi</span>
+</div>
+<nav aria-label="Main" style="display:flex;flex-direction:column;gap:4px">
+<a href="UploadC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span>Upload</span></a>
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg><span>Files</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="ReviewC.dc.html" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;color:#B5C4BD;font-weight:500;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l2 2 4-4"/></svg><span>Review</span><span style="margin-left:auto;background:#3A2A0B;color:#FFC766;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px">5</span></a>
+<a href="QueryC.dc.html" aria-current="page" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;background:#241F4D;color:#B9AFFF;font-weight:600;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><span>Query</span></a>
+</nav>
+<div style="margin-top:auto;background:#121C18;border:1px solid #1F2E28;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+<span style="font-size:12px;color:#9DB0A7">AI approved today</span>
+<span style="font-size:15px;font-weight:600">12 of 50</span>
+<div style="height:6px;border-radius:3px;background:#24342D"><div style="width:24%;height:6px;border-radius:3px;background:#8B7CF6"></div></div>
+<span style="font-size:12px;color:#9DB0A7">AI runs only when you approve it.</span>
+</div>
+</aside>
+
+<main style="flex-grow:1;min-width:0;box-sizing:border-box;padding:40px 48px;display:flex;flex-direction:column;gap:22px">
+<div>
+<div style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#B9AFFF">Search</div>
+<h1 style="margin:6px 0 0;font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:600;letter-spacing:-0.02em">Query</h1>
+<p style="margin:8px 0 0;color:#9DB0A7;font-size:16px">Ask a question in plain English, or narrow the receipts with filters.</p>
+</div>
+
+<section aria-label="Ask a question" style="background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;gap:12px">
+<label for="ask" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Ask about your receipts</label>
+<input id="ask" type="text" value="Total spent on fuel in August" style="flex-grow:1;min-width:0;height:52px;box-sizing:border-box;padding:0 16px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 16px 'DM Sans',sans-serif">
+<button type="button" style="height:52px;padding:0 24px;border:none;border-radius:10px;background:#8B7CF6;color:#0B0820;font:600 15px 'DM Sans',sans-serif;cursor:pointer">Ask</button>
+</div>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:#B5C4BD">
+<span style="font-weight:600">Understood as</span>
+<span style="padding:5px 12px;border-radius:999px;background:#241F4D;color:#B9AFFF;font-weight:500">Category: Fuel</span>
+<span style="padding:5px 12px;border-radius:999px;background:#241F4D;color:#B9AFFF;font-weight:500">1 Aug 2026 to 31 Aug 2026</span>
+<span style="padding:5px 12px;border-radius:999px;background:#241F4D;color:#B9AFFF;font-weight:500">Status: Parsed or Resolved</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9DB0A7">Query that ran (read-only access)</span>
+<div style="padding:12px 14px;border-radius:10px;background:#070C0A;border:1px solid #1F2E28;color:#B7E9D0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;white-space:pre;overflow:hidden">SELECT receipt_date, vendor, receipt_number, total FROM receipts
+WHERE category = 'fuel' AND receipt_date BETWEEN '2026-08-01' AND '2026-08-31'
+  AND status IN ('parsed', 'resolved') ORDER BY receipt_date;</div>
+</div>
+</section>
+
+<section aria-label="Filters" style="display:flex;align-items:flex-end;gap:14px">
+<div style="display:flex;flex-direction:column;gap:6px;flex-grow:1;min-width:0"><label for="f-from" style="font-size:13px;font-weight:500;color:#B5C4BD">From</label><input id="f-from" type="text" value="2026-08-01" style="height:44px;min-width:0;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 14px 'JetBrains Mono',monospace"></div>
+<div style="display:flex;flex-direction:column;gap:6px;flex-grow:1;min-width:0"><label for="f-to" style="font-size:13px;font-weight:500;color:#B5C4BD">To</label><input id="f-to" type="text" value="2026-08-31" style="height:44px;min-width:0;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 14px 'JetBrains Mono',monospace"></div>
+<div style="display:flex;flex-direction:column;gap:6px;flex-grow:2;min-width:0"><label for="f-vendor" style="font-size:13px;font-weight:500;color:#B5C4BD">Vendor</label><select id="f-vendor" style="height:44px;min-width:0;padding:0 12px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 14px 'DM Sans',sans-serif"><option>All vendors</option></select></div>
+<div style="display:flex;flex-direction:column;gap:6px;flex-grow:1;min-width:0"><label for="f-min" style="font-size:13px;font-weight:500;color:#B5C4BD">Min amount</label><input id="f-min" type="text" placeholder="0" style="height:44px;min-width:0;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 14px 'JetBrains Mono',monospace"></div>
+<div style="display:flex;flex-direction:column;gap:6px;flex-grow:1;min-width:0"><label for="f-max" style="font-size:13px;font-weight:500;color:#B5C4BD">Max amount</label><input id="f-max" type="text" placeholder="No limit" style="height:44px;min-width:0;box-sizing:border-box;padding:0 12px;border:1px solid #2A3B34;border-radius:10px;background:#0F1815;color:#EAF2EE;font:400 14px 'JetBrains Mono',monospace"></div>
+<button type="button" style="height:44px;padding:0 20px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:10px;font:500 14px 'DM Sans',sans-serif;cursor:pointer">Apply</button>
+</section>
+
+<section aria-label="Summary" style="display:flex;gap:14px">
+<div style="flex:1;min-width:0;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:16px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#9DB0A7">Receipts</span><span style="font-size:30px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:#B9AFFF">5</span></div>
+<div style="flex:1;min-width:0;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:16px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#9DB0A7">Total</span><span style="font-size:30px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:#B9AFFF">₹10,575.50</span></div>
+<div style="flex:1;min-width:0;box-sizing:border-box;background:#121C18;border:1px solid #1F2E28;border-radius:16px;padding:16px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#9DB0A7">Average</span><span style="font-size:30px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:#B9AFFF">₹2,115.10</span></div>
+<div style="flex:1.1;min-width:0;box-sizing:border-box;background:#2B2109;border:1px solid #5A4310;border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#E8CB8E">Not included</span><span style="font-size:14px;font-weight:600;color:#FFD98A;line-height:1.4">5 files are waiting for review</span><a href="Main.dc.html" style="display:inline-flex;align-items:center;height:32px;font-size:14px;font-weight:600;color:#FFC766;text-decoration:underline">See files needing review</a></div>
+</section>
+
+<section aria-label="Results" style="background:#121C18;border:1px solid #1F2E28;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:40px;align-items:center;background:#0F1815;border-bottom:1px solid #1F2E28;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#9DB0A7"><span>Date</span><span>Vendor</span><span>Receipt no.</span><span>Category</span><span style="text-align:right">Amount</span><span style="text-align:right">Reference</span></div>
+
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:52px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px">2026-08-03</span><span>Sector 12 Fuel Station</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px">SF-20431</span><span>Fuel</span><span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px">₹2,400.00</span><span style="text-align:right"><a href="Main.dc.html" style="display:inline-flex;align-items:center;justify-content:flex-end;height:44px;font:500 12px 'JetBrains Mono',monospace;color:#B9AFFF">REF-2026-000210</a></span></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:52px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px">2026-08-09</span><span>Ring Road Petrol Pump</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px">RR-77120</span><span>Fuel</span><span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px">₹1,850.00</span><span style="text-align:right"><a href="Main.dc.html" style="display:inline-flex;align-items:center;justify-content:flex-end;height:44px;font:500 12px 'JetBrains Mono',monospace;color:#B9AFFF">REF-2026-000233</a></span></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:52px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px">2026-08-14</span><span>Sector 12 Fuel Station</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px">SF-20502</span><span>Fuel</span><span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px">₹2,100.00</span><span style="text-align:right"><a href="Main.dc.html" style="display:inline-flex;align-items:center;justify-content:flex-end;height:44px;font:500 12px 'JetBrains Mono',monospace;color:#B9AFFF">REF-2026-000251</a></span></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:52px;align-items:center;border-bottom:1px solid #1B2A24;font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px">2026-08-21</span><span>Airport Road Fuel Stop</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px">AR-3381</span><span>Fuel</span><span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px">₹1,975.50</span><span style="text-align:right"><a href="Main.dc.html" style="display:inline-flex;align-items:center;justify-content:flex-end;height:44px;font:500 12px 'JetBrains Mono',monospace;color:#B9AFFF">REF-2026-000278</a></span></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 110px 70px 120px 150px;column-gap:16px;padding:0 24px;height:52px;align-items:center;font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px">2026-08-27</span><span>Ring Road Petrol Pump</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px">RR-77388</span><span>Fuel</span><span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px">₹2,250.00</span><span style="text-align:right"><a href="Main.dc.html" style="display:inline-flex;align-items:center;justify-content:flex-end;height:44px;font:500 12px 'JetBrains Mono',monospace;color:#B9AFFF">REF-2026-000296</a></span></div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-top:1px solid #1F2E28;background:#0F1815;font-size:14px;color:#9DB0A7">
+<span>5 receipts</span>
+<button type="button" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:1px solid #2A3B34;background:#182520;color:#EAF2EE;border-radius:10px;font:500 14px 'DM Sans',sans-serif;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Export CSV</button>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
