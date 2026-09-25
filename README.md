@@ -4,7 +4,7 @@
 
 Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
-> **Status:** early development. Phases 1–2 of 7 are complete (foundation, upload and registration). See the [roadmap](#roadmap).
+> **Status:** early development. Phases 1–3 of 7 are complete (foundation, upload and registration, library extraction). See the [roadmap](#roadmap).
 
 ---
 
@@ -42,12 +42,16 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Duplicate detection: identical files are flagged, and the user decides whether to keep a copy
 - File list with status filters, search by name or reference number, pagination and downloads
 - File deletion with confirmation, safe for shared copies
+- File-type detection from the bytes, not the file name
+- Library extraction for Excel (.xlsx, .xls), CSV and digital PDFs: vendor, receipt number, date, subtotal, GST and total, plus line items
+- Multi-receipt files: one receipt per sheet, and PDFs split into receipts by content
+- A background worker with automatic recovery and retries
 - Health and readiness checks for the API, database and queue
 
 **Planned**
 
-- Library extraction for Excel, CSV, digital PDFs, scanned PDFs and images (OCR)
-- Validation: required fields, line-item arithmetic, plausible dates, duplicate receipts
+- OCR for scanned PDFs and photos
+- Validation: line-item arithmetic, plausible dates, duplicate receipts
 - Review page with side-by-side results, manual editing and error reports
 - Opt-in AI extraction per file or per batch, with a confirmation step and a daily cap
 - Query page with filters and plain-English questions
@@ -101,7 +105,14 @@ docker compose up --build
 | API | http://localhost:8000 |
 | API docs (Swagger) | http://localhost:8000/docs |
 
-Database migrations run automatically when the API starts. The sidebar shows **Connected** once the API, database and Redis are all reachable.
+Database migrations run automatically when the API starts, and a background worker processes uploaded files. The sidebar shows **Connected** once the API, database and Redis are all reachable.
+
+To try it with sample receipts, generate a set of synthetic invoices and receipts (Excel, CSV and PDF, with their expected answers in `answers.json`) and upload them on the Upload page:
+
+```bash
+cd backend
+uv run python scripts/make_samples.py   # writes to data/samples/synthetic/
+```
 
 To stop everything:
 
@@ -128,6 +139,12 @@ uv run uvicorn parchi.api.main:app --reload --loop asyncio:SelectorEventLoop
 ```
 
 > The `--loop` flag is needed on Windows, where the default event loop is not supported by the async PostgreSQL driver. It is harmless elsewhere.
+
+To process uploads, also run the worker (from `backend/`, on Linux or macOS; on Windows use Docker):
+
+```bash
+uv run arq parchi.worker.WorkerSettings
+```
 
 ### Frontend
 
@@ -194,10 +211,14 @@ parchi/
 │   ├── src/parchi/
 │   │   ├── api/            FastAPI app, middleware, error handling, routes
 │   │   ├── db/             models, enums, sessions, queries
-│   │   ├── ingestion/      receive, register, storage, deletion
+│   │   ├── extraction/     detectors, Excel/CSV and PDF readers, normalization
+│   │   ├── ingestion/      receive, register, storage, detection, deletion
+│   │   ├── pipeline/       orchestrator, worker jobs, queue, recovery
+│   │   ├── validation/     checks a result must pass
 │   │   ├── schemas/        API request and response models
 │   │   ├── config.py       settings
-│   │   └── logging.py      structured logging
+│   │   ├── logging.py      structured logging
+│   │   └── worker.py       background worker settings
 │   ├── migrations/         Alembic migrations
 │   ├── scripts/            maintenance scripts
 │   └── tests/              unit and integration tests
@@ -236,8 +257,8 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | --- | --- | --- |
 | 1. Foundation | Project setup, Docker Compose, settings, logging, database schema, health checks | ✅ Done |
 | 2. Upload and register | Upload, hashing, reference numbers, duplicates, Files page, downloads | ✅ Done |
-| 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | Next |
-| 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | Planned |
+| 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | ✅ Done |
+| 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | Next |
 | 5. OCR and images | Scanned PDFs and photos, image preprocessing, HEIC support | Planned |
 | 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | Planned |
 | 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Planned |
