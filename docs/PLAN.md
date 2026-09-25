@@ -68,7 +68,6 @@ flowchart LR
 
 ```
 parchi/
-├── CLAUDE.md
 ├── docker-compose.yml
 ├── .env.example
 ├── docs/                    PLAN.md and design/
