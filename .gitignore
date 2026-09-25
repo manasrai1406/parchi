@@ -1,11 +1,36 @@
+# Secrets and local settings
 .env
+.env.*
+!.env.example
+
+# Uploaded receipts, samples and logs (never committed)
 data/
 logs/
+*.log
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
 .venv/
+venv/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+
+# Node / frontend
 node_modules/
 dist/
+*.tsbuildinfo
+coverage/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
 .DS_Store
+Thumbs.db
