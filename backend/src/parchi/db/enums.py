@@ -65,12 +65,15 @@ class FlagSeverity(StrEnum):
     ERROR = "error"
 
 
-class Category(StrEnum):
-    FUEL = "fuel"
-    TRAVEL = "travel"
-    FOOD = "food"
-    OFFICE = "office"
-    UTILITIES = "utilities"
-    MAINTENANCE = "maintenance"
-    SERVICES = "services"
-    OTHER = "other"
+# The categories every installation starts with (D-009). They live in the categories
+# table, where people can add their own (D-026); built-in ones cannot be removed.
+BUILTIN_CATEGORIES: tuple[str, ...] = (
+    "Fuel",
+    "Travel",
+    "Food",
+    "Office",
+    "Utilities",
+    "Maintenance",
+    "Services",
+    "Other",
+)

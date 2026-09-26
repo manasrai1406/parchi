@@ -106,7 +106,7 @@ async def _store_receipts(
             subtotal=receipt.subtotal,
             tax=receipt.tax,
             total=receipt.total,
-            category_auto=vendor.default_category,
+            category_auto_id=vendor.default_category_id,
             confidence=receipt.confidence,
         )
         session.add(row)

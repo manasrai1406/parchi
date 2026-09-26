@@ -187,3 +187,10 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (Phase 3)
 - **Decision:** An ARQ worker on Redis processes files. The API queues a job after a file is registered; the job id is `process-<file id>`, so the same file is never queued twice. A worker claims a file by moving it from `pending` (or `failed`) to `processing` in one statement, so two workers cannot take the same file. A job times out after 5 minutes. Every minute a recovery task re-queues `pending` files, puts files stuck in `processing` for over 10 minutes back to `pending`, and retries `failed` files with backoff, up to 3 attempts. If Redis is down at upload time, the file stays `pending` and recovery queues it later.
 - **Why:** Hard rule 5 needs a recovery job, and it costs little to have it from the start.
+
+## D-026 User-managed categories
+
+- **Date:** 2026-09-26 (between Phases 3 and 4)
+- **Decision:** Categories move from a fixed list in code to a `categories` table. It starts with the eight built-in categories from D-009 (Fuel, Travel, Food, Office, Utilities, Maintenance, Services, Other), and people can add their own. Names are unique regardless of capitalisation and spacing, up to 50 characters. Built-in categories cannot be renamed or deleted. A custom category can be renamed, and deleted only while no receipt or vendor uses it. Receipts store `category_auto_id` and `category_override_id` with a generated `category_id` (the override if set, otherwise the automatic one); vendors store `default_category_id`. The API gains `GET/POST /categories` and `PATCH/DELETE /categories/{id}`. The UI for choosing and adding categories arrives with the Review page in Phase 4.
+- **Why:** Chosen by the user: a managed list rather than free text per receipt, so the same category is not counted twice because of a typo.
+- **Changes:** D-009's fixed list, and the category columns from D-003 and D-012.

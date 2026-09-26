@@ -12,7 +12,6 @@ from parchi.db.base import Base, IdMixin, Money, TimestampMixin, enum_type
 from parchi.db.enums import (
     LIBRARY_PARSERS,
     AiProvider,
-    Category,
     FileKind,
     FileStatus,
     FlagSeverity,
@@ -35,6 +34,22 @@ class UploadBatch(IdMixin, TimestampMixin, Base):
     files: Mapped[list["File"]] = relationship(back_populates="batch", lazy="raise")
 
 
+class Category(IdMixin, TimestampMixin, Base):
+    """Built-in and user-added categories (D-026)."""
+
+    __tablename__ = "categories"
+    __table_args__ = (
+        sa.CheckConstraint(
+            "name <> '' AND name = btrim(name) AND name !~ '[[:cntrl:]]'", name="name_clean"
+        ),
+        # "Fuel" and "fuel" are the same category.
+        sa.Index("uq_categories_lower_name", sa.text("lower(name)"), unique=True),
+    )
+
+    name: Mapped[str] = mapped_column(sa.String(50))
+    builtin: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.false())
+
+
 class Vendor(IdMixin, TimestampMixin, Base):
     """Maps a vendor name as printed to one normalized name (D-002)."""
 
@@ -46,8 +61,8 @@ class Vendor(IdMixin, TimestampMixin, Base):
 
     raw_name: Mapped[str] = mapped_column(sa.String(255), unique=True)
     normalized_name: Mapped[str] = mapped_column(sa.String(255), index=True)
-    default_category: Mapped[Category | None] = mapped_column(
-        enum_type(Category, "default_category")
+    default_category_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("categories.id", ondelete="RESTRICT"), index=True
     )
 
 
@@ -206,14 +221,16 @@ class Receipt(IdMixin, TimestampMixin, Base):
     subtotal: Mapped[Decimal | None] = mapped_column(Money)
     tax: Mapped[Decimal | None] = mapped_column(Money)
     total: Mapped[Decimal] = mapped_column(Money)
-    category_auto: Mapped[Category | None] = mapped_column(enum_type(Category, "category_auto"))
-    category_override: Mapped[Category | None] = mapped_column(
-        enum_type(Category, "category_override")
+    category_auto_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("categories.id", ondelete="RESTRICT"), index=True
     )
-    # The override wins over the automatic category (D-003, D-009).
-    category: Mapped[str | None] = mapped_column(
-        sa.String(20),
-        sa.Computed("COALESCE(category_override, category_auto)", persisted=True),
+    category_override_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("categories.id", ondelete="RESTRICT"), index=True
+    )
+    # The override wins over the automatic category (D-003, D-026).
+    category_id: Mapped[int | None] = mapped_column(
+        sa.BigInteger,
+        sa.Computed("COALESCE(category_override_id, category_auto_id)", persisted=True),
         index=True,
     )
     confidence: Mapped[float | None] = mapped_column(sa.REAL)
@@ -287,6 +304,7 @@ class Flag(IdMixin, TimestampMixin, Base):
 ALL_TABLES = [
     table.name
     for table in (
+        Category.__table__,
         UploadBatch.__table__,
         Vendor.__table__,
         File.__table__,

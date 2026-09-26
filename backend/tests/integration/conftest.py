@@ -101,9 +101,12 @@ def api(engine: Engine, migrated: str, storage_dir: str, monkeypatch: pytest.Mon
     from parchi.api.main import create_app
     from parchi.db.models import ALL_TABLES
 
+    data_tables = [table for table in ALL_TABLES if table != "categories"]
     with engine.begin() as connection:
-        connection.execute(text(f"TRUNCATE {', '.join(ALL_TABLES)} RESTART IDENTITY CASCADE"))
+        connection.execute(text(f"TRUNCATE {', '.join(data_tables)} RESTART IDENTITY CASCADE"))
         connection.execute(text("ALTER SEQUENCE file_ref_seq RESTART"))
+        # Keep the built-in categories the migration seeded; drop ones tests added.
+        connection.execute(text("DELETE FROM categories WHERE NOT builtin"))
 
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("DATABASE_URL", migrated)

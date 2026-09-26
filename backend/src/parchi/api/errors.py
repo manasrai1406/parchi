@@ -49,9 +49,15 @@ async def _http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-    # Name the fields only. Never echo submitted values back.
-    fields = sorted({".".join(str(part) for part in err["loc"]) for err in exc.errors()})
-    return error_response(422, "validation_error", "Invalid fields: " + ", ".join(fields))
+    # Field names and pydantic's message only: never the submitted values.
+    problems = sorted(
+        {
+            f"{'.'.join(str(part) for part in err['loc'])}: "
+            + str(err["msg"]).removeprefix("Value error, ")
+            for err in exc.errors()
+        }
+    )
+    return error_response(422, "validation_error", "; ".join(problems))
 
 
 def register_error_handlers(app: FastAPI) -> None:

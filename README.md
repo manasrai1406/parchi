@@ -46,6 +46,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Library extraction for Excel (.xlsx, .xls), CSV and digital PDFs: vendor, receipt number, date, subtotal, GST and total, plus line items
 - Multi-receipt files: one receipt per sheet, and PDFs split into receipts by content
 - A background worker with automatic recovery and retries
+- Categories: eight built-in ones, plus custom categories you can add, rename and delete
 - Health and readiness checks for the API, database and queue
 
 **Planned**
@@ -246,6 +247,10 @@ Interactive documentation is available at `/docs` when the API is running. Curre
 | `GET` | `/files/{id or ref}` | One file, by id or reference number |
 | `GET` | `/files/{id or ref}/download` | Download the original file |
 | `DELETE` | `/files/{id or ref}` | Delete a file and its extracted data |
+| `GET` | `/categories` | Built-in and custom categories, with usage counts |
+| `POST` | `/categories` | Add a custom category |
+| `PATCH` | `/categories/{id}` | Rename a custom category |
+| `DELETE` | `/categories/{id}` | Delete an unused custom category |
 | `GET` | `/health` | Liveness |
 | `GET` | `/health/ready` | Readiness of PostgreSQL and Redis |
 

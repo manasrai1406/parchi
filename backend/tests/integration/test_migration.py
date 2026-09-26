@@ -277,26 +277,61 @@ def test_receipt_reference_must_match_its_sequence(conn: Connection) -> None:
         make_receipt(conn, file_id, run_id, seq=4, ref_no="REF-2026-000001-4")
 
 
+def category_id(conn: Connection, name: str) -> int:
+    return conn.execute(
+        text("SELECT id FROM categories WHERE lower(name) = lower(:n)"), {"n": name}
+    ).scalar_one()
+
+
+def test_builtin_categories_are_seeded(conn: Connection) -> None:
+    names = conn.execute(text("SELECT name FROM categories WHERE builtin ORDER BY id")).scalars()
+    assert list(names) == [
+        "Fuel",
+        "Travel",
+        "Food",
+        "Office",
+        "Utilities",
+        "Maintenance",
+        "Services",
+        "Other",
+    ]
+
+
+def test_category_names_are_unique_ignoring_case(conn: Connection) -> None:
+    insert(conn, "INSERT INTO categories (name) VALUES ('Client visits')")
+    with rejected(conn):
+        insert(conn, "INSERT INTO categories (name) VALUES ('client VISITS')")
+    for bad in ("", " padded ", "tab" + chr(9) + "here"):
+        with rejected(conn):
+            insert(conn, "INSERT INTO categories (name) VALUES (:n)", n=bad)
+
+
 def test_category_override_wins(conn: Connection) -> None:
     file_id = make_file(conn)
     run_id = make_accepted_run(conn, file_id)
-    receipt_id = make_receipt(conn, file_id, run_id, category_auto="fuel")
+    fuel, travel = category_id(conn, "fuel"), category_id(conn, "travel")
+    receipt_id = make_receipt(conn, file_id, run_id, category_auto_id=fuel)
 
-    def category() -> str | None:
+    def effective() -> int | None:
         return conn.execute(
-            text("SELECT category FROM receipts WHERE id = :id"), {"id": receipt_id}
+            text("SELECT category_id FROM receipts WHERE id = :id"), {"id": receipt_id}
         ).scalar_one()
 
-    assert category() == "fuel"
+    assert effective() == fuel
     conn.execute(
-        text("UPDATE receipts SET category_override = 'travel' WHERE id = :id"), {"id": receipt_id}
+        text("UPDATE receipts SET category_override_id = :c WHERE id = :id"),
+        {"c": travel, "id": receipt_id},
     )
-    assert category() == "travel"
+    assert effective() == travel
+
+
+def test_a_category_in_use_cannot_be_deleted(conn: Connection) -> None:
+    file_id = make_file(conn)
+    run_id = make_accepted_run(conn, file_id)
+    custom = insert(conn, "INSERT INTO categories (name) VALUES ('Client visits')")
+    make_receipt(conn, file_id, run_id, category_override_id=custom)
     with rejected(conn):
-        conn.execute(
-            text("UPDATE receipts SET category_override = 'petrol' WHERE id = :id"),
-            {"id": receipt_id},
-        )
+        conn.execute(text("DELETE FROM categories WHERE id = :id"), {"id": custom})
 
 
 def test_deleting_a_receipt_removes_items_and_keeps_flags(conn: Connection) -> None:
