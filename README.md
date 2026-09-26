@@ -92,7 +92,7 @@ Each uploaded file moves through a fixed pipeline: **Receive → Register → De
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with Compose v2)
-- About 6 GB of disk for the images and at least 4 GB of memory for Docker: the OCR models alone need ~1.5 GB when reading photos
+- About 6 GB of disk for the images and about 3 GB of memory for Docker (the OCR worker peaks near 400 MB while reading a photo)
 
 ### Run the full stack
 
@@ -117,7 +117,7 @@ To try it with sample receipts, generate a set of synthetic invoices, receipts, 
 docker compose exec api python scripts/make_samples.py   # writes to data/samples/synthetic/
 ```
 
-OCR (PaddleOCR) is included in the Docker image, with its models downloaded at build time, so images never leave your machine. The first photo after a restart takes about a minute while the models load; later ones take 10–20 seconds on a CPU.
+OCR (PaddleOCR) is included in the Docker image, with its models downloaded at build time, so images never leave your machine. A photo takes a few seconds to read on a laptop CPU; the first one after a restart is a little slower while the models load.
 
 To stop everything:
 
