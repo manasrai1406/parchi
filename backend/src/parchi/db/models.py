@@ -6,7 +6,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from parchi.db.base import Base, IdMixin, Money, TimestampMixin, enum_type
 from parchi.db.enums import (
@@ -300,6 +300,14 @@ class Flag(IdMixin, TimestampMixin, Base):
 
     file: Mapped[File] = relationship(back_populates="flags", lazy="raise")
 
+
+# Unresolved flags on a file, loaded with every file (D-029: a parsed file may have some).
+File.open_flags = column_property(
+    sa.select(sa.func.count(Flag.id))
+    .where(Flag.file_id == File.id, sa.not_(Flag.resolved))
+    .correlate_except(Flag)
+    .scalar_subquery()
+)
 
 ALL_TABLES = [
     table.name

@@ -22,7 +22,9 @@ from parchi.ingestion.detector import detect
 from parchi.ingestion.storage import Storage
 from parchi.logging import bind_context, get_logger
 from parchi.schemas.receipt import ReceiptSchema
+from parchi.validation import rules
 from parchi.validation.required import basic_problems, summarize
+from parchi.validation.rules import check_receipts, record_problems
 
 log = get_logger(__name__)
 
@@ -96,18 +98,26 @@ async def _vendor(session: AsyncSession, printed: str) -> Vendor:
     return (await session.execute(select(Vendor).where(Vendor.raw_name == raw))).scalar_one()
 
 
-async def _store_receipts(
-    session: AsyncSession, file: Claimed, run_id: int, receipts: list[ReceiptSchema]
-) -> None:
+async def store_receipts(
+    session: AsyncSession,
+    file_id: int,
+    file_ref_no: str,
+    run_id: int,
+    receipts: list[ReceiptSchema],
+    *,
+    manual: bool = False,
+) -> list[int]:
+    """Insert receipts and their line items; returns the receipt ids in order."""
+    ids: list[int] = []
     for seq, receipt in enumerate(receipts, start=1):
         if receipt.vendor is None or receipt.receipt_date is None or receipt.total is None:
             raise ValueError("An accepted receipt is missing a required field")
         vendor = await _vendor(session, receipt.vendor)
         row = Receipt(
-            file_id=file.id,
+            file_id=file_id,
             run_id=run_id,
             seq=seq,
-            ref_no=f"{file.ref_no}-{seq:02d}",
+            ref_no=f"{file_ref_no}-{seq:02d}",
             vendor_id=vendor.id,
             receipt_number=receipt.receipt_number,
             receipt_date=receipt.receipt_date,
@@ -115,10 +125,12 @@ async def _store_receipts(
             tax=receipt.tax,
             total=receipt.total,
             category_auto_id=vendor.default_category_id,
-            confidence=receipt.confidence,
+            # Receipts entered by hand have no reader confidence (D-013).
+            confidence=None if manual else receipt.confidence,
         )
         session.add(row)
         await session.flush()
+        ids.append(row.id)
         session.add_all(
             LineItem(
                 receipt_id=row.id,
@@ -130,6 +142,7 @@ async def _store_receipts(
             )
             for position, item in enumerate(receipt.line_items, start=1)
         )
+    return ids
 
 
 async def _mark_unreadable(session: AsyncSession, file: Claimed, reason: str) -> None:
@@ -257,9 +270,14 @@ async def _run(session: AsyncSession, storage: Storage, file: Claimed) -> Outcom
             await _finish(session, file.id, FileStatus.FLAGGED, error)
             outcome = Outcome.UNREADABLE
         elif accepted:
-            await _store_receipts(session, file, run.id, receipts)
+            receipt_ids = await store_receipts(session, file.id, file.ref_no, run.id, receipts)
+            # Failed checks are warnings: the receipts are stored, the flags stay open (D-029).
+            problems = await check_receipts(session, receipts, file.id, rules.current_date())
+            await record_problems(session, file.id, receipt_ids, problems)
             await _finish(session, file.id, FileStatus.PARSED)
             outcome = Outcome.PARSED
+            if problems:
+                log.info("pipeline.warnings", flags=[p.type.value for p in problems])
         else:
             await _finish(session, file.id, FileStatus.NEEDS_REVIEW, error or summarize(problems))
             outcome = Outcome.NEEDS_REVIEW

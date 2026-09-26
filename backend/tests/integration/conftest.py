@@ -6,6 +6,7 @@ dropped and rebuilt. Without it, or if the server is down, these tests are skipp
 
 import os
 from collections.abc import Iterator
+from datetime import date
 
 import pytest
 from alembic import command
@@ -13,6 +14,8 @@ from alembic.config import Config
 from sqlalchemy import Connection, Engine, create_engine, make_url, text
 
 from parchi.config import to_async_url
+
+TODAY = date(2026, 9, 26)
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -120,6 +123,8 @@ def api(engine: Engine, migrated: str, storage_dir: str, monkeypatch: pytest.Mon
         queued.append(file_id)
 
     monkeypatch.setattr("parchi.api.routes.batches.queue_file", record)
+    # Date checks use "today"; pin it so the samples' dates never age out.
+    monkeypatch.setattr("parchi.validation.rules.current_date", lambda: TODAY)
 
     # psycopg's async mode cannot run on Windows' default Proactor event loop.
     options = {"loop_factory": asyncio.SelectorEventLoop} if sys.platform == "win32" else {}

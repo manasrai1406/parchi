@@ -210,3 +210,31 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (recorded ahead of Phase 7)
 - **Decision:** The Query page's **From** and **To** filters are date pickers, not text boxes. They open on the current Indian financial year to date: From is 1 April of the current financial year and To is today, in `APP_TIMEZONE`. Before 1 April, that is 1 April of the previous calendar year. Changing either date re-runs the filters. From cannot be later than To. A plain-English question that names a period ("fuel in August") uses that period instead, and the page shows the range it used.
 - **Why:** Chosen by the user. The financial year is the period expenses are usually totalled and filed for.
+
+## D-029 Phase 4 validation rules
+
+- **Date:** 2026-09-26 (Phase 4)
+- **Decision:**
+  1. **Arithmetic:** amounts may be off by up to ₹1, which also covers the "Round Off" line Indian bills use to reach a whole rupee. Line items must add up to the subtotal or to the total. Subtotal + tax must equal the total when both are printed.
+  2. **Dates:** plausible from 1 April of the previous financial year up to today, in `APP_TIMEZONE`. A future date, or anything older, fails.
+  3. **Duplicate receipts:** a receipt matches one already stored (on a `parsed` or `resolved` file) when the vendor's normalized name (ignoring case), the receipt number and the total are the same. Without a receipt number, vendor, date and total are used.
+  4. **A failed check does not stop a file (user's choice).** Its receipts are stored and count in queries, the file stays `parsed`, and each problem is recorded as an open warning flag: `arithmetic_mismatch`, `validation_failed` for dates, or `duplicate_receipt`. Only missing required fields (vendor, date, total), low confidence or no receipt at all still send a file to `needs_review` (D-024), because such a receipt cannot be stored.
+- **Why:** Chosen by the user. Checked data counts at once, and warnings stay visible until a person looks at them.
+- **Changes the plan:** `parsed` no longer means every check passed. It means the receipts are stored, and the file may have open warning flags.
+
+## D-030 Review, resolving and rejecting
+
+- **Date:** 2026-09-26 (Phase 4)
+- **Decision:**
+  1. The Review page shows one file: a preview of the original (PDFs inline; spreadsheets and other types as a download), its reference number, its open flags, and each receipt's fields and line items, all editable, including the category (built-in or a new custom one, D-026).
+  2. **Save** records the edits as a `manual` extraction run. That run becomes the accepted one, the file's receipts are replaced with the edited ones (D-013 item 5), the checks run again on the edited values, and the file becomes `resolved`. Warnings still left after the edit are marked resolved by the local user, since the person has seen them and decided.
+  3. **Mark as OK** resolves a single warning flag without editing.
+  4. **Reject** marks a file `rejected` (not a receipt, or a bad scan), with the reason kept in `error`. Its receipts are removed from queries.
+  5. The Review queue lists files in `needs_review` or `flagged`, and `parsed` files with open warning flags.
+- **Why:** Plan phase 4, with D-029's warning flags.
+
+## D-031 Error report as PDF
+
+- **Date:** 2026-09-26 (Phase 4)
+- **Decision:** `GET /files/{id}/error-report` returns a PDF: reference number, file details, open and resolved flags, every extraction run with its result and error, and the `run_id` needed to find the log lines. `GET /files/error-reports.zip` holds the originals of all files with problems plus one combined PDF. The PDF is written with ReportLab, which is BSD-licensed. Amounts are printed with "Rs." because the standard PDF fonts have no rupee symbol.
+- **Why:** Chosen by the user, as easy to email or print. ReportLab over PyMuPDF because of the AGPL (D-024 item 6).
