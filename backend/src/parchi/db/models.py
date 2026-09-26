@@ -181,6 +181,12 @@ class ExtractionRun(IdMixin, TimestampMixin, Base):
     accepted: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.false())
     error: Mapped[str | None] = mapped_column(sa.Text)
     finished_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    # AI runs: token counts for cost, and the earlier run a cached result came from (D-036).
+    input_tokens: Mapped[int | None] = mapped_column(sa.Integer)
+    output_tokens: Mapped[int | None] = mapped_column(sa.Integer)
+    cached_from_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("extraction_runs.id", ondelete="SET NULL"), index=True
+    )
 
     file: Mapped[File] = relationship(back_populates="runs", lazy="raise")
 

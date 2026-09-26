@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     ai_daily_cap: int = Field(default=50, ge=0)
     anthropic_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    # Models used when a person approves AI (D-035).
+    anthropic_model: str = "claude-sonnet-5"
+    openai_model: str = "gpt-6-sol"
+    ai_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
 
     @field_validator("database_url")
     @classmethod

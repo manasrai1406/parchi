@@ -9,7 +9,7 @@ from parchi.config import get_settings
 from parchi.db.session import get_engine
 from parchi.logging import configure_logging, get_logger
 from parchi.pipeline.queue import redis_settings
-from parchi.pipeline.tasks import process_file_task, recover
+from parchi.pipeline.tasks import ai_extract_task, process_file_task, recover
 
 log = get_logger(__name__)
 
@@ -31,7 +31,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions: ClassVar = [process_file_task]
+    functions: ClassVar = [process_file_task, ai_extract_task]
     cron_jobs: ClassVar = [cron(recover, second=0, run_at_startup=True)]
     on_startup = startup
     on_shutdown = shutdown

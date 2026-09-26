@@ -39,3 +39,19 @@ async def files_to_queue(session: AsyncSession) -> list[int]:
             },
         )
         return [row[0] for row in rows]
+
+
+_UNFINISHED_AI = text(
+    "SELECT id FROM extraction_runs"
+    " WHERE parser = 'ai' AND finished_at IS NULL"
+    "   AND created_at < now() - make_interval(secs => :stuck)"
+    " ORDER BY id"
+)
+
+
+async def ai_runs_to_queue(session: AsyncSession) -> list[int]:
+    """Approved AI reads a crashed worker never finished. Their approval is already
+    recorded, so they are simply queued again (the job skips a finished run)."""
+    async with session.begin():
+        rows = await session.execute(_UNFINISHED_AI, {"stuck": STUCK_AFTER_SECONDS})
+        return [row[0] for row in rows]

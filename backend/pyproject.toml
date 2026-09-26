@@ -22,6 +22,8 @@ dependencies = [
     "xlrd>=2.0.2",
     "reportlab>=5.0.1",
     "pypdfium2>=5.13.0",
+    "anthropic>=1.8.0",
+    "openai>=3.19.2",
 ]
 
 [project.optional-dependencies]

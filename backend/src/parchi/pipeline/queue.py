@@ -13,6 +13,7 @@ from parchi.logging import get_logger
 log = get_logger(__name__)
 
 PROCESS_FILE = "process_file_task"
+AI_EXTRACT = "ai_extract_task"
 
 _pool: ArqRedis | None = None
 
@@ -31,6 +32,15 @@ def job_id(file_id: int) -> str:
 
 async def enqueue_file(redis: ArqRedis, file_id: int) -> bool:
     job = await redis.enqueue_job(PROCESS_FILE, file_id, _job_id=job_id(file_id))
+    return job is not None
+
+
+def ai_job_id(run_id: int) -> str:
+    return f"ai-{run_id}"
+
+
+async def enqueue_ai_run(redis: ArqRedis, run_id: int) -> bool:
+    job = await redis.enqueue_job(AI_EXTRACT, run_id, _job_id=ai_job_id(run_id))
     return job is not None
 
 
@@ -55,4 +65,16 @@ async def queue_file(file_id: int) -> None:
         log.info("queue.file_queued", queued_file_id=file_id, already_queued=not queued)
     except Exception as exc:
         log.warning("queue.unavailable", queued_file_id=file_id, error_type=type(exc).__name__)
+        await close_pool()
+
+
+async def queue_ai_runs(run_ids: list[int]) -> None:
+    """Queue approved AI reads. If Redis is down, recovery queues them later (D-025)."""
+    try:
+        pool = await get_pool()
+        for run_id in run_ids:
+            await enqueue_ai_run(pool, run_id)
+        log.info("queue.ai_queued", runs=len(run_ids))
+    except Exception as exc:
+        log.warning("queue.unavailable", runs=len(run_ids), error_type=type(exc).__name__)
         await close_pool()

@@ -166,6 +166,9 @@ class RunOut(BaseModel):
     ai_approved_at: datetime | None
     finished_at: datetime | None
     created_at: datetime
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cached_from_id: int | None = None
     result: list[ReceiptSchema] | None
 
 
@@ -218,3 +221,43 @@ class ManualEdit(BaseModel):
 
 class RejectIn(BaseModel):
     reason: str = Field(min_length=1, max_length=300, description="e.g. Not a receipt")
+
+
+class AiExtractIn(BaseModel):
+    """Approval to send one file to an AI provider (hard rule 1)."""
+
+    provider: AiProvider
+    approved: Literal[True] = Field(
+        description="Must be true: the person confirmed the file will be sent to the provider"
+    )
+
+
+class AiBatchIn(AiExtractIn):
+    """Approval for several files at once (D-036)."""
+
+    files: list[str] = Field(min_length=1, max_length=50, description="Ids or reference numbers")
+
+
+class AiRunOut(BaseModel):
+    file_id: int
+    ref_no: str
+    run_id: int
+
+
+class AiRunsOut(BaseModel):
+    runs: list[AiRunOut]
+
+
+class AiProviderInfo(BaseModel):
+    provider: AiProvider
+    label: str
+    model: str
+    configured: bool
+
+
+class AiUsage(BaseModel):
+    enabled: bool
+    daily_cap: int
+    used_today: int
+    remaining: int
+    providers: list[AiProviderInfo]

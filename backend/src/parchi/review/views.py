@@ -57,6 +57,9 @@ def file_detail(file: File) -> FileDetail:
                 ai_approved_at=run.ai_approved_at,
                 finished_at=run.finished_at,
                 created_at=run.created_at,
+                input_tokens=run.input_tokens,
+                output_tokens=run.output_tokens,
+                cached_from_id=run.cached_from_id,
                 result=_result(run.result_json),
             )
             for run in sorted(file.runs, key=lambda r: r.id, reverse=True)

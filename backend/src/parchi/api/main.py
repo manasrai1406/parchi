@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from parchi.api.errors import register_error_handlers
 from parchi.api.middleware import RequestContextMiddleware
-from parchi.api.routes import batches, categories, files, flags, health
+from parchi.api.routes import ai, batches, categories, files, flags, health
 from parchi.config import get_settings
 from parchi.db.session import get_engine
 from parchi.logging import configure_logging, get_logger
@@ -33,6 +33,8 @@ def create_app() -> FastAPI:
     register_error_handlers(app)
     app.include_router(health.router)
     app.include_router(batches.router)
+    # Before files: /files/ai-extract must not be read as a file key.
+    app.include_router(ai.router)
     app.include_router(files.router)
     app.include_router(categories.router)
     app.include_router(flags.router)

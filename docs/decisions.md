@@ -263,3 +263,25 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** PaddleOCR uses its mobile models (`PP-OCRv5_mobile_det` and `en_PP-OCRv5_mobile_rec`) instead of the default medium ones, with no per-line orientation model, 2 CPU threads, and at most 2 worker jobs at a time. Page orientation (sideways, upside down) is still corrected.
 - **Why:** On an 8 GB laptop, Docker gets about 3.7 GB, and the medium models ran it out of memory. With the mobile models the worker peaks at about 380 MB instead of 850 MB or more. On the synthetic photos and scans they were also faster (2–9 s against 10–16 s a photo) and at least as accurate: every sample reached its expected status, and the scanned marketplace invoice went from 8/12 to 12/12 fields right.
 - **Revisit:** if real photos read poorly, the medium models can be tried again on a machine with more memory.
+
+## D-035 Opt-in AI: providers, models and what is sent
+
+- **Date:** 2026-09-26 (Phase 6)
+- **Decision:**
+  1. Claude and OpenAI sit behind one interface (user's choice). The person picks the provider in the approval dialog. A provider can only be used when its API key is set.
+  2. Default models are `claude-sonnet-5` ($2 / $10 per million tokens, user's choice) and `gpt-6-sol` (the same price tier), set by `ANTHROPIC_MODEL` and `OPENAI_MODEL`.
+  3. The original file is sent (user's choice): photos as images (JPEG, PNG, WebP) and PDFs as documents. Spreadsheets and CSVs go as text, because providers cannot read them directly. HEIC cannot be sent, since neither provider accepts it and it is not converted (D-032).
+  4. The answer comes back as structured JSON that must match Parchi's receipt shape. It then goes through the same normalizing and checks as a library result. AI results get a fixed confidence of 0.9, because neither provider reports one.
+- **Why:** User's choices. Sending the original lets the AI fix what OCR misread.
+
+## D-036 Approval, caching, the daily cap, and what happens to the result
+
+- **Date:** 2026-09-26 (Phase 6)
+- **Decision:**
+  1. **Approval is enforced on the server** (hard rule 1). `POST /files/{id}/ai-extract` and the batch form `POST /files/ai-extract` need `approved: true` and a provider. They are refused when `AI_ENABLED` is false, when the provider has no key, when the file is not in `needs_review`, `flagged` or `parsed`, or when the daily cap would be exceeded. The approval (who, when, provider, model) is written to the extraction run before anything is sent, and the worker calls a provider only for a run that carries it. The database constraint from D-012 backs this up.
+  2. **Daily cap:** approved AI runs per day in `APP_TIMEZONE`, cached results not counted (`AI_DAILY_CAP`, default 50).
+  3. **Cache:** a result is reused, with no call and nothing sent, when a file with the same bytes (SHA-256) already has a successful AI run from the same provider and model. The run records which run it came from.
+  4. **The result (user's choice):** it goes through the same checks. If it passes and agrees with the library's reading on vendor, date and total, it is stored and the file becomes `parsed` (warnings as in D-029). If it disagrees, the file is `flagged` with a `parser_conflict` flag listing the differences, and the person chooses on the Review page. If the AI call fails or its result fails the checks, the file is `flagged`.
+  5. Each run records input and output token counts. Logs carry provider, model, tokens, latency and outcome, never receipt content.
+- **Why:** Plan phase 6 and hard rule 1. The token counts make the cost visible.
+- **Changes the data model:** migration `0003` adds `input_tokens`, `output_tokens` and `cached_from_id` to `extraction_runs`.
