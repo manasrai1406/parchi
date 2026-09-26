@@ -59,7 +59,7 @@ _CURRENCY = re.compile(r"₹|\brs\b\.?|\binr\b|/-", re.IGNORECASE)
 _PLAIN_NUMBER = re.compile(r"^-?\d+(?:\.\d+)?$")
 # An amount inside a line of text: 1,23,456.50 or 540 or 540.5, with an optional ₹/Rs.
 AMOUNT_IN_TEXT = re.compile(
-    r"(?<![\w.,/-])(?:₹|rs\.?|inr)?\s*(\(?-?(?:\d{1,3}(?:,\d{2,3})+|\d+)(?:\.\d{1,2})?\)?)(?![\d,]*\d|[/-]\d|%)",
+    r"(?<![\w.,/-])(?:₹|rs\.?|inr)?\s*(\(?-?(?:\d{1,3}(?:,\d{2,3})+|\d+)(?:\.\d{1,2})?\)?)(?![\d,]*\d|\.\d|[/-]\d|\s*%)",
     re.IGNORECASE,
 )
 

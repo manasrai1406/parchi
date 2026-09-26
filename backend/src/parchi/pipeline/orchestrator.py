@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -80,9 +80,17 @@ async def _finish(
 
 async def _vendor(session: AsyncSession, printed: str) -> Vendor:
     raw = clean_vendor(printed) or printed
+    # "MPS TELECOM RETAIL" and "MPS Telecom Retail" are the same vendor: a new printed
+    # form reuses the normalized name of one that differs only in case (D-024 item 3).
+    existing = await session.scalar(
+        select(Vendor.normalized_name)
+        .where(func.lower(Vendor.normalized_name) == raw.lower())
+        .order_by(Vendor.id)
+        .limit(1)
+    )
     await session.execute(
         insert(Vendor)
-        .values(raw_name=raw, normalized_name=raw)
+        .values(raw_name=raw, normalized_name=existing or raw)
         .on_conflict_do_nothing(index_elements=["raw_name"])
     )
     return (await session.execute(select(Vendor).where(Vendor.raw_name == raw))).scalar_one()

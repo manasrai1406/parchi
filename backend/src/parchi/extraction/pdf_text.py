@@ -1,7 +1,7 @@
 """Digital PDFs (real text on the page) with pdfplumber.
 
 Pages are grouped into receipts by content (D-022); fields are read from the text with
-labels, and line items from the tables pdfplumber finds.
+labels, and line items from the tables pdfplumber finds, or from text tables.
 """
 
 import re
@@ -22,6 +22,7 @@ from parchi.extraction.normalize import (
     clean_vendor,
     find_date,
 )
+from parchi.extraction.text_table import read_text_table
 from parchi.schemas.receipt import LineItemSchema, ReceiptSchema
 
 # A page starts a new receipt if one of its first lines is a document title.
@@ -42,10 +43,11 @@ _NUMBER = re.compile(
     rf"\b(?:{_NUMBER_LABEL})(?![A-Za-z])\W*?([A-Za-z0-9][A-Za-z0-9/\-]*\d[A-Za-z0-9/\-]*|\d+)",
     re.IGNORECASE,
 )
-_DATE = re.compile(
-    rf"\b(?:{_label_regex(FIELD_LABELS['receipt_date'])})(?![A-Za-z])\W*?({DATE_PATTERN})",
-    re.IGNORECASE,
-)
+# One pattern per date label, strongest first: "Invoice Date" beats "Order Date" or "Date".
+_DATES = [
+    re.compile(rf"\b{_label_regex([label])}(?![A-Za-z])\W*?({DATE_PATTERN})", re.IGNORECASE)
+    for label in FIELD_LABELS["receipt_date"]
+]
 
 
 @dataclass
@@ -96,7 +98,7 @@ def read_group(pages: list[Page]) -> ReceiptSchema | None:
     lines = [line for page in pages for line in page.lines]
 
     number_match = _NUMBER.search(text)
-    date_match = _DATE.search(text)
+    date_match = next((m for pattern in _DATES if (m := pattern.search(text))), None)
     receipt_date = find_date(date_match.group(1)) if date_match else find_date(text)
 
     best: dict[str, tuple[int, Decimal]] = {}
@@ -121,17 +123,31 @@ def read_group(pages: list[Page]) -> ReceiptSchema | None:
             if found:
                 items.extend(found.items)
 
+    # Items tables printed as text, without ruled lines; their Total row also gives the
+    # taxable value and the tax when those are not printed on their own lines.
+    text_table = None if items else read_text_table(lines)
+    if text_table:
+        items = text_table.items
+
     tax = best["tax"][1] if "tax" in best else None
+    if tax is None and text_table and text_table.tax is not None:
+        tax = text_table.tax
     if tax is None and tax_parts:
         tax = sum(tax_parts.values(), Decimal("0"))
+    subtotal = best["subtotal"][1] if "subtotal" in best else None
+    if subtotal is None and text_table:
+        subtotal = text_table.subtotal
+    total = best["total"][1] if "total" in best else None
+    if total is None and text_table:
+        total = text_table.total
 
     fields = {
         "vendor": _vendor(lines),
         "receipt_number": clean_receipt_number(number_match.group(1)) if number_match else None,
         "receipt_date": receipt_date,
-        "subtotal": best["subtotal"][1] if "subtotal" in best else None,
+        "subtotal": subtotal,
         "tax": tax,
-        "total": best["total"][1] if "total" in best else None,
+        "total": total,
         "line_items": items,
     }
     if not (fields["total"] or fields["line_items"] or fields["receipt_number"]):

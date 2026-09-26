@@ -525,6 +525,77 @@ def fuel_bill_pdf() -> Sample:
     )
 
 
+def marketplace_invoices_pdf() -> Sample:
+    """Two tax invoices in one PDF, laid out like a marketplace order: the items table is
+    plain text without ruled lines, and the GST lines print rates, not amounts."""
+
+    def invoice(seller: str, number: str, rows: list[str], totals: str, grand: str) -> list:
+        page = PageBuilder(left=40)
+        page.line("Tax Invoice", size=13, gap=20)
+        page.line(f"Sold By: {seller} ,")
+        page.line("Ship-from Address: Plot 7, Sector 63, Noida, Uttar Pradesh - 201301")
+        page.line("GSTIN - 09AABCN1234F1Z2")
+        page.line(f"Invoice Number # {number}")
+        page.line("Order ID: OD100200300400")
+        page.line("Order Date: 22-07-2026")
+        page.line("Invoice Date: 23-07-2026", gap=22)
+        page.line("Product Title Qty Gross Discounts Taxable SGST CGST Total", size=9)
+        page.line("Amount /Coupons Value /UTGST", size=8)
+        for row in rows:
+            page.line(row, size=9)
+        page.line("SGST/UTGST: 9.0 %", size=8)
+        page.line("CGST: 9.0 %", size=8)
+        page.line(totals, size=9)
+        page.line(f"Grand Total Rs. {grand}", size=11)
+        return page.ops
+
+    first = invoice(
+        "Nova Retail Private Limited",
+        "NVRIN2026000871",
+        [
+            "Bluetooth Speaker 20W with 1 2499.00 0.00 2117.80 190.60 190.60 2499.00",
+            "HSN/SAC: 85182200 deep bass",
+            "Handling Fee 1 49.00 -49.00 0.00 0.00 0.00 0.00",
+        ],
+        "Total 1 2548.00 -49.00 2117.80 190.60 190.60 2499.00",
+        "2499.00",
+    )
+    second = invoice(
+        "NOVA RETAIL PRIVATE LIMITED",
+        "NVRSV2026000872",
+        ["SAC: 998599 Extended Warranty Fee 1 99.00 0.00 83.90 7.55 7.55 99.00"],
+        "Total 1 99.00 0.00 83.90 7.55 7.55 99.00",
+        "99.00",
+    )
+    return Sample(
+        "marketplace_invoices.pdf",
+        build_pdf([first, second]),
+        "pdf_text",
+        "parsed",
+        [
+            Expected(
+                "Nova Retail Private Limited",
+                D("2499.00"),
+                date(2026, 7, 23),
+                "NVRIN2026000871",
+                D("2117.80"),
+                D("381.20"),
+                2,
+            ),
+            Expected(
+                "NOVA RETAIL PRIVATE LIMITED",
+                D("99.00"),
+                date(2026, 7, 23),
+                "NVRSV2026000872",
+                D("83.90"),
+                D("15.10"),
+                1,
+            ),
+        ],
+        "text items table without lines; GST rate lines; order date before invoice date",
+    )
+
+
 def scanned_pdf() -> Sample:
     page = PageBuilder()
     page.ops.append(("line", 50, 700, 545, 700))
@@ -563,6 +634,7 @@ def all_samples() -> list[Sample]:
         two_page_invoice_pdf(),
         three_bills_pdf(),
         fuel_bill_pdf(),
+        marketplace_invoices_pdf(),
         scanned_pdf(),
         damaged_pdf(),
     ]

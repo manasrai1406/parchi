@@ -268,3 +268,17 @@ def test_recovery_retries_failed_files_with_backoff_up_to_three_times(
     age(engine, exhausted, "failed", 3600, attempts=3)
 
     assert recoverable() == [due]
+
+
+def test_vendor_names_differing_only_in_case_share_one_normalized_name(
+    api: TestClient, storage_dir: str, engine: Engine
+) -> None:
+    sample = next(s for s in SAMPLES if s.name == "marketplace_invoices.pdf")
+    file = upload(api, sample)
+    process(storage_dir, file["id"])
+
+    vendors = query(engine, "SELECT raw_name, normalized_name FROM vendors ORDER BY id")
+    assert [tuple(v) for v in vendors] == [
+        ("Nova Retail Private Limited", "Nova Retail Private Limited"),
+        ("NOVA RETAIL PRIVATE LIMITED", "Nova Retail Private Limited"),
+    ]

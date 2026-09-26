@@ -194,3 +194,13 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** Categories move from a fixed list in code to a `categories` table. It starts with the eight built-in categories from D-009 (Fuel, Travel, Food, Office, Utilities, Maintenance, Services, Other), and people can add their own. Names are unique regardless of capitalisation and spacing, up to 50 characters. Built-in categories cannot be renamed or deleted. A custom category can be renamed, and deleted only while no receipt or vendor uses it. Receipts store `category_auto_id` and `category_override_id` with a generated `category_id` (the override if set, otherwise the automatic one); vendors store `default_category_id`. The API gains `GET/POST /categories` and `PATCH/DELETE /categories/{id}`. The UI for choosing and adding categories arrives with the Review page in Phase 4.
 - **Why:** Chosen by the user: a managed list rather than free text per receipt, so the same category is not counted twice because of a typo.
 - **Changes:** D-009's fixed list, and the category columns from D-003 and D-012.
+
+## D-027 Lessons from the first real receipt
+
+- **Date:** 2026-09-26 (Phase 3)
+- **Decision:** The first real sample, a two-invoice marketplace PDF, changed four reading rules:
+  1. A number followed by `%`, even after a space (`9.0 %`), is a rate and never an amount.
+  2. Items tables printed as plain text, without ruled lines, are read: the header row names the numeric columns in order, a row is an item when it ends with that many numbers, and the table's Total row supplies the taxable value (subtotal) and the tax (SGST + CGST + IGST ...) when those are not printed on their own lines.
+  3. Date labels are tried strongest first: "Invoice Date" wins over "Order Date" or a plain "Date".
+  4. A vendor name that differs from an existing one only in capitalisation gets the same normalized name (it keeps its own raw name), so the two group together (refines D-024 item 3).
+- **Why:** The first version read the GST rate as the tax amount and found no line items on this layout, which is common for marketplace and billing-software invoices. A synthetic sample with the same layout (`marketplace_invoices.pdf`) keeps it tested without committing the real receipt.

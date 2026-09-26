@@ -85,3 +85,8 @@ def test_receipt_numbers_need_a_digit() -> None:
 def test_vendor_names_are_tidied() -> None:
     assert clean_vendor("  Sharma   Traders, ") == "Sharma Traders"
     assert clean_vendor("   ") is None
+
+
+def test_rates_with_a_space_before_the_percent_sign_are_not_amounts() -> None:
+    assert amounts_in("SGST/UTGST: 9.0 %") == []
+    assert amounts_in("CGST: 9.0 % 289.75") == [Decimal("289.75")]
