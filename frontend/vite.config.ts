@@ -16,6 +16,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Inside Docker on Windows or macOS, file-change events do not arrive: poll instead.
+    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 500 } : undefined,
     proxy: {
       "/api": {
         target: apiTarget,
