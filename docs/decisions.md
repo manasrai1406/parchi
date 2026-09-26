@@ -323,3 +323,10 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** Google's Gemini joins Claude and OpenAI as an opt-in AI provider, through the `google-genai` SDK (2.25). The default model is `gemini-3.6-flash` (user's choice), set with `GEMINI_MODEL`; the key is `GEMINI_API_KEY`, kept only in `.env`. It is sent exactly what the others are (D-035): the original PDF or image as inline bytes, or a spreadsheet as CSV text, with the same instructions and JSON schema (`response_json_schema`). Every rule from D-036 applies unchanged: approval recorded before any call, `AI_ENABLED`, the daily cap, the cache per file, provider and model, and the checks on the result. Migration `0005` adds `gemini` to the allowed providers on `extraction_runs`.
 - **Why:** Requested by the user. Gemini 3.6 Flash balances cost and multimodal quality for receipts.
 - **Changes the data model:** migration `0005` (the provider CHECK constraint).
+
+## D-042 HEIC photos stay unsupported
+
+- **Date:** 2026-09-26 (after Phase 7)
+- **Decision:** HEIC support is dropped from the plan (user's choice). HEIC files are still accepted at upload and go to `needs_review` with a note to convert them to JPG or PNG (D-032 item 4); they are never read, and they are not sent to AI providers (D-035).
+- **Why:** Chosen by the user. It would need a new dependency for one phone format that is easy to convert.
+- **Changes:** The plan's "convert HEIC" step for images (PLAN.md, phase 5).

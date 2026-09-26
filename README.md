@@ -61,7 +61,6 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 
 **Planned**
 
-- HEIC photos (for now, convert to JPG or PNG)
 - Login and user roles, cloud deployment, and exports beyond CSV
 
 ## Architecture
@@ -315,7 +314,7 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | 2. Upload and register | Upload, hashing, reference numbers, duplicates, Files page, downloads | ✅ Done |
 | 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | ✅ Done |
 | 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | ✅ Done |
-| 5. OCR and images | Scanned PDFs and photos, image preprocessing (HEIC later) | ✅ Done |
+| 5. OCR and images | Scanned PDFs and photos (JPG, PNG, WebP), image preprocessing | ✅ Done |
 | 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | ✅ Done |
 | 7. Query and hardening | Filters, plain-English queries on read-only access, CSV export, CI | ✅ Done |
 
