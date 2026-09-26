@@ -310,3 +310,9 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (Phase 7)
 - **Decision:** The table shows 50 receipts per page, oldest first (or largest first when asked). The totals (count, sum, average) always cover every matching receipt. **Export CSV** has one row per receipt for the current filters, all pages: Date, Vendor, Receipt no., Category, Subtotal, Tax, Total, Reference, File. A cell that starts with `=`, `+`, `-` or `@` is prefixed with `'` so a spreadsheet does not run it as a formula.
 - **Why:** Chosen by the user: paging keeps the page fast with thousands of receipts a month; one row per receipt matches the screen.
+
+## D-040 Faster Docker builds
+
+- **Date:** 2026-09-26 (after Phase 7)
+- **Decision:** The backend image is built once and shared by the API and the worker (`image: parchi-backend`). Its layers run from least to most often changed: system packages, Python dependencies, OCR models, then the app. The OCR model layer copies only `ocr.py` and the download script, so changing other code no longer downloads the models again. `uv` and `npm` keep their download caches between builds (BuildKit cache mounts), so changing one dependency does not download PaddlePaddle again. In development the code is mounted into the containers, so code changes need no rebuild at all; only dependency or model changes do.
+- **Why:** Rebuilds downloaded the OCR models on every code change and built the same backend image twice.

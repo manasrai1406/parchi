@@ -13,20 +13,32 @@ ENV UV_COMPILE_BYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
+RUN useradd --create-home parchi && mkdir -p /data/uploads /app/logs && chown -R parchi /data /app/logs
+
 WORKDIR /app
 
-# Dependencies first, so code changes do not reinstall them. The image includes OCR (D-032).
+# Layers run from least to most often changed, so a rebuild redoes as little as possible.
+# 1. Dependencies (the image includes OCR, D-032). The cache mount keeps downloaded
+#    wheels between builds, so changing one dependency does not download PaddlePaddle again.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project --extra ocr
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --extra ocr
 
-COPY . .
-RUN uv sync --frozen --extra ocr
-
-RUN useradd --create-home parchi && mkdir -p /data/uploads /app/logs && chown -R parchi /data /app/logs
+# 2. OCR models, fetched now so recognition works offline. Only the OCR settings and the
+#    download script are copied, so code changes elsewhere do not download them again.
+COPY scripts/download_ocr_models.py /opt/ocr-setup/
+COPY src/parchi/__init__.py /opt/ocr-setup/parchi/
+COPY src/parchi/extraction/__init__.py src/parchi/extraction/ocr.py /opt/ocr-setup/parchi/extraction/
 USER parchi
+RUN PYTHONPATH=/opt/ocr-setup python /opt/ocr-setup/download_ocr_models.py
+USER root
 
-# The OCR models are fetched now, not at run time, so recognition works offline.
-RUN python scripts/download_ocr_models.py
+# 3. The app itself.
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra ocr
+
+USER parchi
 
 EXPOSE 8000
 CMD ["sh", "-c", "alembic upgrade head && uvicorn parchi.api.main:app --host 0.0.0.0 --port 8000"]
