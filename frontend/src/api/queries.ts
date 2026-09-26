@@ -166,3 +166,42 @@ export function useCreateCategory() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
+
+export type AiProvider = Schemas["AiExtractIn"]["provider"];
+export type AiUsage = Schemas["AiUsage"];
+
+/** Files the AI approval accepts (D-036): the reader failed, AI failed, or warnings remain. */
+export const AI_ELIGIBLE: readonly FileStatus[] = ["needs_review", "flagged", "parsed"];
+
+export function useAiUsage() {
+  return useQuery({
+    queryKey: ["ai", "usage"],
+    queryFn: () => apiGet<AiUsage>("/ai/usage"),
+    refetchInterval: 15_000,
+  });
+}
+
+/** Approve files for an AI read. Nothing is sent before this call succeeds (hard rule 1). */
+export function useApproveAi() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ refs, provider }: { refs: string[]; provider: AiProvider }) =>
+      refs.length === 1
+        ? apiSend<Schemas["AiRunsOut"]>(
+            "POST",
+            `/files/${encodeURIComponent(refs[0]!)}/ai-extract`,
+            { provider, approved: true },
+          )
+        : apiSend<Schemas["AiRunsOut"]>("POST", "/files/ai-extract", {
+            files: refs,
+            provider,
+            approved: true,
+          }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["files"] }),
+        queryClient.invalidateQueries({ queryKey: ["file"] }),
+        queryClient.invalidateQueries({ queryKey: ["ai"] }),
+      ]),
+  });
+}

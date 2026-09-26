@@ -15,6 +15,7 @@ import {
   type FileStatus,
   type FileSummary,
 } from "@/api/queries";
+import { AiApprovalDialog } from "@/components/AiApprovalDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -41,8 +42,29 @@ const CHIPS: (FileStatus | "all")[] = [
 const features = tableFeatures({});
 const column = createColumnHelper<typeof features, FileSummary>();
 
-function makeColumns(onDelete: (file: FileSummary) => void) {
+// Rows that can be sent to AI together (design: batch selection on the Files page).
+const SELECTABLE: readonly FileStatus[] = ["needs_review", "flagged"];
+
+function makeColumns(
+  onDelete: (file: FileSummary) => void,
+  selected: Map<string, FileSummary>,
+  onToggle: (file: FileSummary) => void,
+) {
   return column.columns([
+    column.display({
+      id: "select",
+      header: () => <span className="sr-only">Select</span>,
+      cell: ({ row: { original: file } }) =>
+        SELECTABLE.includes(file.status) ? (
+          <input
+            type="checkbox"
+            checked={selected.has(file.ref_no)}
+            onChange={() => onToggle(file)}
+            aria-label={`Select ${file.original_name}`}
+            className="size-5 cursor-pointer accent-accent"
+          />
+        ) : null,
+    }),
     column.display({
       id: "file",
       header: "File",
@@ -143,7 +165,7 @@ function makeColumns(onDelete: (file: FileSummary) => void) {
   ]);
 }
 
-const GRID = "grid grid-cols-[minmax(0,1fr)_140px_140px_300px] gap-x-4 px-6";
+const GRID = "grid grid-cols-[28px_minmax(0,1fr)_140px_140px_300px] gap-x-4 px-6";
 
 type Summary = NonNullable<ReturnType<typeof useSummary>["data"]>;
 
@@ -211,14 +233,26 @@ export function FilesPage() {
 
   const [toDelete, setToDelete] = useState<FileSummary | null>(null);
   const deletion = useDeleteFile();
+  const [selected, setSelected] = useState<Map<string, FileSummary>>(new Map());
+  const [approving, setApproving] = useState(false);
   const columns = useMemo(
     () =>
-      makeColumns((file) => {
-        deletion.reset();
-        setToDelete(file);
-      }),
+      makeColumns(
+        (file) => {
+          deletion.reset();
+          setToDelete(file);
+        },
+        selected,
+        (file) =>
+          setSelected((current) => {
+            const next = new Map(current);
+            if (next.has(file.ref_no)) next.delete(file.ref_no);
+            else next.set(file.ref_no, file);
+            return next;
+          }),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset is stable
-    [],
+    [selected],
   );
 
   const table = useTable({
@@ -323,6 +357,31 @@ export function FilesPage() {
       </div>
 
       <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+        {selected.size > 0 && (
+          <div
+            role="region"
+            aria-label="Selection"
+            className="flex h-14 items-center justify-between gap-4 border-b border-accent-border bg-accent-soft px-5"
+          >
+            <span className="text-sm font-semibold text-accent-text">{selected.size} selected</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelected(new Map())}
+                className="h-11 rounded-[10px] border border-accent-border px-4 text-sm font-medium"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setApproving(true)}
+                className="h-11 rounded-[10px] bg-accent px-4.5 text-sm font-semibold text-on-accent"
+              >
+                Extract with AI…
+              </button>
+            </div>
+          </div>
+        )}
         <div role="table" aria-label="Files" aria-rowcount={total}>
           {table.getHeaderGroups().map((group) => (
             <div
@@ -401,6 +460,13 @@ export function FilesPage() {
         </div>
       </div>
 
+      {approving && (
+        <AiApprovalDialog
+          files={[...selected.values()]}
+          onClose={() => setApproving(false)}
+          onApproved={() => setSelected(new Map())}
+        />
+      )}
       {toDelete && (
         <ConfirmDialog
           title={`Delete ${toDelete.original_name}?`}

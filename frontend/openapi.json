@@ -250,6 +250,203 @@
         }
       }
     },
+    "/files/ai-extract": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Ai Extract Batch",
+        "description": "Approve several files for an AI read. All or nothing.",
+        "operationId": "ai_extract_batch_files_ai_extract_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiBatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiRunsOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{file_key}/ai-extract": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Ai Extract",
+        "description": "Approve one file for an AI read. The approval is recorded before anything is sent.",
+        "operationId": "ai_extract_files__file_key__ai_extract_post",
+        "parameters": [
+          {
+            "name": "file_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiExtractIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiRunsOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
+    "/ai/usage": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Ai Usage",
+        "description": "For the sidebar: approved AI reads today against the daily cap, and the providers.",
+        "operationId": "ai_usage_ai_usage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiUsage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/files": {
       "get": {
         "tags": [
@@ -1022,6 +1219,57 @@
   },
   "components": {
     "schemas": {
+      "AiBatchIn": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "approved": {
+            "type": "boolean",
+            "const": true,
+            "title": "Approved",
+            "description": "Must be true: the person confirmed the file will be sent to the provider"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Files",
+            "description": "Ids or reference numbers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "approved",
+          "files"
+        ],
+        "title": "AiBatchIn",
+        "description": "Approval for several files at once (D-036)."
+      },
+      "AiExtractIn": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "approved": {
+            "type": "boolean",
+            "const": true,
+            "title": "Approved",
+            "description": "Must be true: the person confirmed the file will be sent to the provider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "approved"
+        ],
+        "title": "AiExtractIn",
+        "description": "Approval to send one file to an AI provider (hard rule 1)."
+      },
       "AiProvider": {
         "type": "string",
         "enum": [
@@ -1029,6 +1277,108 @@
           "openai"
         ],
         "title": "AiProvider"
+      },
+      "AiProviderInfo": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "label",
+          "model",
+          "configured"
+        ],
+        "title": "AiProviderInfo"
+      },
+      "AiRunOut": {
+        "properties": {
+          "file_id": {
+            "type": "integer",
+            "title": "File Id"
+          },
+          "ref_no": {
+            "type": "string",
+            "title": "Ref No"
+          },
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id",
+          "ref_no",
+          "run_id"
+        ],
+        "title": "AiRunOut"
+      },
+      "AiRunsOut": {
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/AiRunOut"
+            },
+            "type": "array",
+            "title": "Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "runs"
+        ],
+        "title": "AiRunsOut"
+      },
+      "AiUsage": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "daily_cap": {
+            "type": "integer",
+            "title": "Daily Cap"
+          },
+          "used_today": {
+            "type": "integer",
+            "title": "Used Today"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/AiProviderInfo"
+            },
+            "type": "array",
+            "title": "Providers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "daily_cap",
+          "used_today",
+          "remaining",
+          "providers"
+        ],
+        "title": "AiUsage"
       },
       "BatchDetail": {
         "properties": {
@@ -2270,6 +2620,39 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "cached_from_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached From Id"
           },
           "result": {
             "anyOf": [

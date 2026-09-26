@@ -42,10 +42,23 @@ const EMPTY_RECEIPT: ReceiptValues = {
   line_items: [],
 };
 
-/** What the library (or the last manual edit) read for each receipt, for comparison. */
+/** What the library reader found for each receipt, for comparison. */
 export function libraryResults(file: FileDetail): Extracted[] {
-  const run = file.runs.find((r) => r.parser !== "manual" && r.result);
+  const run = file.runs.find((r) => r.parser !== "manual" && r.parser !== "ai" && r.result);
   return run?.result ?? [];
+}
+
+/** The latest AI read, if a person approved one (runs arrive newest first). */
+export function aiRun(file: FileDetail) {
+  return file.runs.find((r) => r.parser === "ai" && r.finished_at);
+}
+
+/** A field of an extracted receipt as the form would hold it, for comparing and copying. */
+export function fieldValue(
+  receipt: Extracted | undefined,
+  field: "vendor" | "receipt_number" | "receipt_date" | "subtotal" | "tax" | "total",
+): string {
+  return receipt ? text(receipt[field]) : "";
 }
 
 /** Start from the stored receipts; if none, from what the reader found; else blank. */

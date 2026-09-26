@@ -1,7 +1,7 @@
 import { FileCheck2, List, Search, Upload, type LucideIcon } from "lucide-react";
 import { NavLink } from "react-router";
 
-import { useReadiness, useSummary } from "@/api/queries";
+import { useAiUsage, useReadiness, useSummary } from "@/api/queries";
 import { cn } from "@/lib/utils";
 
 // The badge counts files needing attention: needs review, flagged, or with open warnings.
@@ -46,7 +46,7 @@ function SystemStatus() {
 
   return (
     <div
-      className="mt-auto flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5"
+      className="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5"
       aria-live="polite"
     >
       <span className="text-xs text-muted">System</span>
@@ -65,6 +65,34 @@ function SystemStatus() {
       <span className="text-xs text-muted">
         {state === "down" && error instanceof Error ? error.message : "API, database and Redis."}
       </span>
+    </div>
+  );
+}
+
+/** From the design: approved AI reads today against the daily cap (GET /ai/usage). */
+function AiUsageCard() {
+  const { data: usage } = useAiUsage();
+  if (!usage) return null;
+  const share = usage.daily_cap ? Math.min(usage.used_today / usage.daily_cap, 1) : 0;
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5">
+      <span className="text-xs text-muted">AI approved today</span>
+      <span className="text-[15px] font-semibold">
+        {usage.enabled ? `${usage.used_today} of ${usage.daily_cap}` : "AI is off"}
+      </span>
+      {usage.enabled && (
+        <div
+          className="h-1.5 rounded-full bg-track"
+          role="progressbar"
+          aria-label="AI approvals used today"
+          aria-valuenow={usage.used_today}
+          aria-valuemin={0}
+          aria-valuemax={usage.daily_cap}
+        >
+          <div className="h-1.5 rounded-full bg-accent" style={{ width: `${share * 100}%` }} />
+        </div>
+      )}
+      <span className="text-xs text-muted">AI runs only when you approve it.</span>
     </div>
   );
 }
@@ -101,7 +129,10 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <SystemStatus />
+      <div className="mt-auto flex flex-col gap-3">
+        <AiUsageCard />
+        <SystemStatus />
+      </div>
     </aside>
   );
 }

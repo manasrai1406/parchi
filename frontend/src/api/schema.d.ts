@@ -98,6 +98,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/ai-extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ai Extract Batch
+         * @description Approve several files for an AI read. All or nothing.
+         */
+        post: operations["ai_extract_batch_files_ai_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{file_key}/ai-extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ai Extract
+         * @description Approve one file for an AI read. The approval is recorded before anything is sent.
+         */
+        post: operations["ai_extract_files__file_key__ai_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ai Usage
+         * @description For the sidebar: approved AI reads today against the daily cap, and the providers.
+         */
+        get: operations["ai_usage_ai_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/files": {
         parameters: {
             query?: never;
@@ -323,10 +383,78 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AiBatchIn
+         * @description Approval for several files at once (D-036).
+         */
+        AiBatchIn: {
+            provider: components["schemas"]["AiProvider"];
+            /**
+             * Approved
+             * @description Must be true: the person confirmed the file will be sent to the provider
+             * @constant
+             */
+            approved: true;
+            /**
+             * Files
+             * @description Ids or reference numbers
+             */
+            files: string[];
+        };
+        /**
+         * AiExtractIn
+         * @description Approval to send one file to an AI provider (hard rule 1).
+         */
+        AiExtractIn: {
+            provider: components["schemas"]["AiProvider"];
+            /**
+             * Approved
+             * @description Must be true: the person confirmed the file will be sent to the provider
+             * @constant
+             */
+            approved: true;
+        };
+        /**
          * AiProvider
          * @enum {string}
          */
         AiProvider: "anthropic" | "openai";
+        /** AiProviderInfo */
+        AiProviderInfo: {
+            provider: components["schemas"]["AiProvider"];
+            /** Label */
+            label: string;
+            /** Model */
+            model: string;
+            /** Configured */
+            configured: boolean;
+        };
+        /** AiRunOut */
+        AiRunOut: {
+            /** File Id */
+            file_id: number;
+            /** Ref No */
+            ref_no: string;
+            /** Run Id */
+            run_id: number;
+        };
+        /** AiRunsOut */
+        AiRunsOut: {
+            /** Runs */
+            runs: components["schemas"]["AiRunOut"][];
+        };
+        /** AiUsage */
+        AiUsage: {
+            /** Enabled */
+            enabled: boolean;
+            /** Daily Cap */
+            daily_cap: number;
+            /** Used Today */
+            used_today: number;
+            /** Remaining */
+            remaining: number;
+            /** Providers */
+            providers: components["schemas"]["AiProviderInfo"][];
+        };
         /** BatchDetail */
         BatchDetail: {
             /** Id */
@@ -751,6 +879,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Input Tokens */
+            input_tokens?: number | null;
+            /** Output Tokens */
+            output_tokens?: number | null;
+            /** Cached From Id */
+            cached_from_id?: number | null;
             /** Result */
             result: components["schemas"]["ReceiptSchema"][] | null;
         };
@@ -966,6 +1100,166 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ai_extract_batch_files_ai_extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiBatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiRunsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ai_extract_files__file_key__ai_extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiExtractIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiRunsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ai_usage_ai_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiUsage"];
                 };
             };
         };

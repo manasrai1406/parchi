@@ -4,7 +4,7 @@
 
 Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
-> **Status:** early development. Phases 1–5 of 7 are complete (foundation, upload and registration, library extraction, validation and review, OCR). See the [roadmap](#roadmap).
+> **Status:** early development. Phases 1–6 of 7 are complete (foundation, upload and registration, library extraction, validation and review, OCR, opt-in AI). See the [roadmap](#roadmap).
 
 ---
 
@@ -53,10 +53,12 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
 
+- Opt-in AI extraction with Claude or OpenAI, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
+- AI results side by side with the library result on the Review page; disagreements are flagged for you to choose
+
 **Planned**
 
-- HEIC photos (for now, convert to JPG or PNG)
-- Opt-in AI extraction per file or per batch, with a confirmation step and a daily cap
+- HEIC photos (for now, convert to JPG or PNG) extraction per file or per batch, with a confirmation step and a daily cap
 - Query page with filters and plain-English questions
 
 ## Architecture
@@ -215,8 +217,24 @@ Settings are read from environment variables (or `.env`). See [`.env.example`](.
 | `AI_ENABLED` | `false` | Master switch for every AI call |
 | `AI_DAILY_CAP` | `50` | Approved AI extractions allowed per day |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | — | Set only for the providers you use |
+| `ANTHROPIC_MODEL`, `OPENAI_MODEL` | `claude-sonnet-5`, `gpt-6-sol` | Models used for approved AI reads |
 
 Never commit `.env` or anything under `data/`.
+
+### Turning on AI
+
+AI is off by default and nothing is ever sent without an approval. To use it, add a key for at least one provider to `.env`, switch it on, and restart:
+
+```bash
+AI_ENABLED=true
+ANTHROPIC_API_KEY=sk-ant-...     # and/or OPENAI_API_KEY=sk-...
+```
+
+```bash
+docker compose up -d api worker
+```
+
+Then choose **Extract with AI…** on a file in review (or select several on the Files page). The dialog shows the provider, what will be sent, and how many approvals are left today.
 
 ## Project structure
 
@@ -224,6 +242,7 @@ Never commit `.env` or anything under `data/`.
 parchi/
 ├── backend/
 │   ├── src/parchi/
+│   │   ├── ai/             provider interface, Claude and OpenAI adapters, prompt
 │   │   ├── api/            FastAPI app, middleware, error handling, routes
 │   │   ├── db/             models, enums, sessions, queries
 │   │   ├── extraction/     Excel/CSV, PDF and OCR readers, image cleanup, normalization
@@ -267,6 +286,9 @@ Interactive documentation is available at `/docs` when the API is running. Curre
 | `PUT` | `/files/{id or ref}/receipts` | Save a person's corrections; the file becomes resolved |
 | `POST` | `/files/{id or ref}/reject` | Reject a file (not a receipt, bad scan) |
 | `POST` | `/flags/{id}/resolve` | Mark a warning as looked at and OK |
+| `POST` | `/files/{id or ref}/ai-extract` | Approve one file for an AI read (`provider`, `approved: true`) |
+| `POST` | `/files/ai-extract` | Approve several files at once |
+| `GET` | `/ai/usage` | Approved AI reads today, the daily cap, and which providers are set up |
 | `DELETE` | `/files/{id or ref}` | Delete a file and its extracted data |
 | `GET` | `/categories` | Built-in and custom categories, with usage counts |
 | `POST` | `/categories` | Add a custom category |
@@ -286,8 +308,8 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | ✅ Done |
 | 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | ✅ Done |
 | 5. OCR and images | Scanned PDFs and photos, image preprocessing (HEIC later) | ✅ Done |
-| 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | Next |
-| 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Planned |
+| 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | ✅ Done |
+| 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Next |
 
 ## Documentation
 

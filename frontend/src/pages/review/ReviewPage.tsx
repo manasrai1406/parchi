@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 
 import type { Schemas } from "@/api/client";
 import {
+  AI_ELIGIBLE,
   BUSY,
   downloadUrl,
   useCategories,
@@ -14,6 +15,7 @@ import {
   useSaveReceipts,
   type FileDetail,
 } from "@/api/queries";
+import { AiApprovalDialog } from "@/components/AiApprovalDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatRupees } from "@/lib/format";
 import { FLAG_TITLES } from "@/lib/status";
@@ -21,7 +23,9 @@ import { cn } from "@/lib/utils";
 
 import { RejectDialog } from "./RejectDialog";
 import {
+  aiRun,
   EMPTY_ITEM,
+  fieldValue,
   formSchema,
   initialValues,
   itemsAddUp,
@@ -216,15 +220,51 @@ const FIELDS: {
   { name: "total", label: "Total", type: "money", show: (r) => formatRupees(r.total) },
 ];
 
+function Result({
+  receipt,
+  field,
+  differs,
+  onUse,
+}: {
+  receipt: Extracted;
+  field: (typeof FIELDS)[number];
+  differs: boolean;
+  onUse: () => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-start gap-1">
+      <span className={cn("truncate text-sm text-muted", field.type !== "text" && "font-mono")}>
+        {receipt ? field.show(receipt) : "—"}
+      </span>
+      {differs && receipt && (
+        <button
+          type="button"
+          onClick={onUse}
+          className="min-h-8 text-xs font-semibold text-accent-text underline underline-offset-2"
+        >
+          Use this
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ReceiptEditor({
   index,
   library,
+  ai,
+  aiLabel,
   form,
 }: {
   index: number;
   library: Extracted;
+  ai: Extracted;
+  aiLabel: string | null;
   form: ReturnType<typeof useForm<FormValues>>;
 }) {
+  const columns = aiLabel
+    ? "grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)]"
+    : "grid-cols-[120px_minmax(0,1fr)_minmax(0,1.3fr)]";
   const { register, control, setValue, formState } = form;
   const items = useFieldArray({ control, name: `receipts.${index}.line_items` });
   const receipt = useWatch({ control, name: `receipts.${index}` });
@@ -234,26 +274,51 @@ function ReceiptEditor({
   return (
     <div className="flex flex-col gap-5">
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1.3fr)] gap-x-4 border-b border-border bg-sidebar px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-muted uppercase">
+        <div
+          className={cn(
+            "grid gap-x-4 border-b border-border bg-sidebar px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-muted uppercase",
+            columns,
+          )}
+        >
           <span>Field</span>
           <span>Library result</span>
+          {aiLabel && <span>AI result · {aiLabel}</span>}
           <span>Final value</span>
         </div>
         {FIELDS.map((field) => {
           const error = errors?.[field.name]?.message;
+          const libraryValue = fieldValue(library, field.name);
+          const aiValue = fieldValue(ai, field.name);
+          const differs = Boolean(aiLabel && libraryValue && aiValue && libraryValue !== aiValue);
+          const use = (value: string) =>
+            setValue(`receipts.${index}.${field.name}`, value, { shouldDirty: true });
           return (
             <div
               key={field.name}
-              className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1.3fr)] items-center gap-x-4 border-t border-divider px-5 py-2.5 first-of-type:border-t-0"
+              className={cn(
+                "grid items-center gap-x-4 border-t border-divider px-5 py-2.5 first-of-type:border-t-0",
+                columns,
+              )}
             >
-              <label htmlFor={`r${index}-${field.name}`} className="text-sm font-medium">
-                {field.label}
-              </label>
-              <span
-                className={cn("truncate text-sm text-muted", field.type !== "text" && "font-mono")}
-              >
-                {library ? field.show(library) : "—"}
-              </span>
+              <div className="flex flex-col gap-1">
+                <label htmlFor={`r${index}-${field.name}`} className="text-sm font-medium">
+                  {field.label}
+                </label>
+                {differs && (
+                  <span className="w-fit rounded-full bg-review-bg px-2 py-0.5 text-[11px] font-semibold text-review">
+                    Differs
+                  </span>
+                )}
+              </div>
+              <Result
+                receipt={library}
+                field={field}
+                differs={differs}
+                onUse={() => use(libraryValue)}
+              />
+              {aiLabel && (
+                <Result receipt={ai} field={field} differs={differs} onUse={() => use(aiValue)} />
+              )}
               <div className="flex flex-col gap-1">
                 <input
                   id={`r${index}-${field.name}`}
@@ -268,9 +333,12 @@ function ReceiptEditor({
             </div>
           );
         })}
-        <div className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1.3fr)] items-center gap-x-4 border-t border-divider px-5 py-2.5">
+        <div
+          className={cn("grid items-center gap-x-4 border-t border-divider px-5 py-2.5", columns)}
+        >
           <span className="text-sm font-medium">Category</span>
           <span className="text-sm text-muted">—</span>
+          {aiLabel && <span className="text-sm text-muted">—</span>}
           <CategorySelect
             index={index}
             register={register}
@@ -370,6 +438,11 @@ function ReviewForm({ file }: { file: FileDetail }) {
   const form = useForm<FormValues>({ defaultValues: initialValues(file) });
   const receipts = useFieldArray({ control: form.control, name: "receipts" });
   const library = libraryResults(file);
+  const latestAi = aiRun(file);
+  const aiLabel = latestAi?.provider
+    ? `${latestAi.provider === "anthropic" ? "Claude" : "OpenAI"}${latestAi.error ? " (failed)" : ""}`
+    : null;
+  const [askingAi, setAskingAi] = useState(false);
   const [current, setCurrent] = useState(0);
   const [rejecting, setRejecting] = useState(false);
   const save = useSaveReceipts(file.ref_no);
@@ -425,7 +498,14 @@ function ReviewForm({ file }: { file: FileDetail }) {
 
         {receipts.fields.map((field, index) =>
           index === current ? (
-            <ReceiptEditor key={field.id} index={index} library={library[index]} form={form} />
+            <ReceiptEditor
+              key={field.id}
+              index={index}
+              library={library[index]}
+              ai={latestAi?.result?.[index]}
+              aiLabel={aiLabel}
+              form={form}
+            />
           ) : null,
         )}
 
@@ -441,6 +521,11 @@ function ReviewForm({ file }: { file: FileDetail }) {
         )}
 
         <div className="flex items-center justify-end gap-3">
+          {AI_ELIGIBLE.includes(file.status) && (
+            <button type="button" className={SECONDARY} onClick={() => setAskingAi(true)}>
+              {latestAi ? "Try AI again…" : "Extract with AI…"}
+            </button>
+          )}
           <button
             type="button"
             className={cn(SECONDARY, "text-flagged")}
@@ -465,6 +550,7 @@ function ReviewForm({ file }: { file: FileDetail }) {
       </form>
       {/* Outside the form, so Enter in the dialog does not submit the review. */}
       {rejecting && <RejectDialog file={file} onClose={() => setRejecting(false)} />}
+      {askingAi && <AiApprovalDialog files={[file]} onClose={() => setAskingAi(false)} />}
     </>
   );
 }
@@ -499,6 +585,14 @@ export function ReviewPage() {
             <StatusBadge status={file.status} />
             <span className="font-mono text-sm text-muted">{file.ref_no}</span>
           </div>
+          {file.status === "ai_processing" && (
+            <p
+              role="status"
+              className="rounded-xl border border-accent-border bg-accent-soft px-4 py-3 text-sm text-accent-text"
+            >
+              AI is reading this file. The page updates when it finishes.
+            </p>
+          )}
           {file.error && (
             <p
               className={cn(

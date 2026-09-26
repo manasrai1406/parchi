@@ -183,3 +183,41 @@ describe("summary and review actions", () => {
     ).toBe("/api/files/REF-2026-000001/error-report");
   });
 });
+
+describe("batch AI approval", () => {
+  it("selects files needing review and opens one approval for them", async () => {
+    const review = [
+      { ...FILES[0]!, status: "needs_review", open_flags: 0 },
+      { ...FILES[1]!, status: "needs_review", open_flags: 0 },
+    ];
+    mockApi((url) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/ai/usage") {
+        return {
+          body: {
+            enabled: true,
+            daily_cap: 50,
+            used_today: 0,
+            remaining: 50,
+            providers: [{ provider: "anthropic", label: "Claude", model: "m", configured: true }],
+          },
+        };
+      }
+      if (url.startsWith("/api/files?")) {
+        return { body: { items: review, total: 2, page: 1, page_size: 25 } };
+      }
+    });
+    renderAt("/files");
+
+    fireEvent.click(await screen.findByLabelText("Select inv_0421_copy.pdf"));
+    fireEvent.click(screen.getByLabelText("Select inv_0421.pdf"));
+    expect(screen.getByText("2 selected")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Extract with AI…" }));
+    expect(await screen.findByText("Extract 2 files with AI?")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.queryByText("2 selected")).toBeNull();
+  });
+});

@@ -213,3 +213,59 @@ describe("Review page", () => {
     expect((screen.getByLabelText("Receipt no.") as HTMLInputElement).value).toBe("R-102");
   });
 });
+
+describe("Review page with an AI result", () => {
+  it("shows the AI result next to the library's, marks differences and copies with Use this", async () => {
+    const libraryRun = file().runs[0]!;
+    const detail = file({
+      status: "flagged",
+      error: "The readers disagree. Choose on the Review page.",
+      runs: [
+        {
+          ...libraryRun,
+          id: 10,
+          parser: "ai",
+          provider: "anthropic",
+          model: "claude-sonnet-5",
+          ai_approved_by: "local user",
+          ai_approved_at: NOW,
+          accepted: false,
+          result: [
+            {
+              ...libraryRun.result![0]!,
+              vendor: "Raju Paints",
+              receipt_date: "2026-08-20",
+              total: "210.00",
+            },
+          ],
+        },
+        libraryRun,
+      ],
+    });
+    mockApi((url, method) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/categories") return { body: CATEGORIES };
+      if (url === "/api/ai/usage")
+        return {
+          body: { enabled: true, daily_cap: 50, used_today: 1, remaining: 49, providers: [] },
+        };
+      if (url === `/api/files/${detail.ref_no}` && method === "GET") return { body: detail };
+    });
+    renderAt("/review/REF-2026-000005");
+
+    expect(await screen.findByText("AI result · Claude")).toBeTruthy();
+    expect(screen.getAllByText("Differs").length).toBe(1); // vendor; the library had no date or total
+    expect(screen.getByText("Raju Paints")).toBeTruthy();
+
+    const useButtons = screen.getAllByRole("button", { name: "Use this" });
+    fireEvent.click(useButtons[1]!); // the AI's vendor
+    expect((screen.getByLabelText("Vendor") as HTMLInputElement).value).toBe("Raju Paints");
+    expect(screen.getByRole("button", { name: "Try AI again…" })).toBeTruthy();
+  });
+
+  it("offers AI on a file that needs review", async () => {
+    setup();
+    renderAt("/review/REF-2026-000005");
+    expect(await screen.findByRole("button", { name: "Extract with AI…" })).toBeTruthy();
+  });
+});
