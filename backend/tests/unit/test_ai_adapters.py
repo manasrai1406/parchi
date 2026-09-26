@@ -319,7 +319,8 @@ def _gemini_cases() -> list[Any]:
     from google.genai import errors, types
 
     def api(code: int, status: str) -> Exception:
-        return errors.ClientError(code, {"error": {"code": code, "message": "x", "status": status}})
+        body = {"error": {"code": code, "message": "x", "status": status}}
+        return (errors.ServerError if code >= 500 else errors.ClientError)(code, body)
 
     return [
         ({"response": gemini_response(None, blocked="SAFETY")}, "declined"),
@@ -330,6 +331,7 @@ def _gemini_cases() -> list[Any]:
         ({"error": api(403, "PERMISSION_DENIED")}, "API key"),
         ({"error": api(404, "NOT_FOUND")}, "does not know the model"),
         ({"error": api(429, "RESOURCE_EXHAUSTED")}, "rate limit"),
+        ({"error": api(503, "UNAVAILABLE")}, "busy right now"),
         ({"error": api(400, "INVALID_ARGUMENT")}, "could not accept this file"),
     ]
 

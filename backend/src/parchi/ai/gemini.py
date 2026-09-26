@@ -46,6 +46,8 @@ def _error(exc: errors.APIError, model: str) -> AiCallError:
         return AiCallError("Gemini's rate limit or quota was reached. Try again later.")
     if code in (400, 413):
         return AiCallError("Gemini could not accept this file (too large or unsupported).")
+    if code in (500, 503):
+        return AiCallError("Gemini is busy right now (high demand). Try again in a few minutes.")
     if code in (408, 504):
         return AiCallError("Gemini did not answer in time.")
     return AiCallError(f"Gemini returned an error ({code}).")
@@ -75,6 +77,8 @@ class GeminiProvider:
                     system_instruction=SYSTEM_PROMPT,
                     response_mime_type="application/json",
                     response_json_schema=RECEIPTS_SCHEMA,
+                    # No tools are offered, so the SDK's function calling stays off.
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 ),
             )
         except errors.APIError as exc:
