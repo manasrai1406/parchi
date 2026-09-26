@@ -18,3 +18,8 @@ class Extractor(Protocol):
     def extract(self, path: Path) -> list[ReceiptSchema]:
         """Every receipt in the file. An empty list means none could be found."""
         ...
+
+
+class UnsupportedFormatError(Exception):
+    """The file is fine but this kind can't be read yet (e.g. HEIC). The person is told
+    what to do; nothing is flagged and no run is recorded."""

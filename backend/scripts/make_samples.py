@@ -1,6 +1,7 @@
 """Write the synthetic receipts (D-020) and their expected answers to data/samples/synthetic/.
 
 Usage (from backend/): uv run python scripts/make_samples.py
+With the photo samples (needs OpenCV): docker compose exec api python scripts/make_samples.py
 Upload the files on the Upload page to see the pipeline work on them.
 """
 
@@ -16,10 +17,20 @@ from tests.fixtures.synthetic import all_samples  # noqa: E402
 TARGET = BACKEND.parent / "data" / "samples" / "synthetic"
 
 
+def samples() -> list:
+    found = all_samples()
+    try:
+        from tests.fixtures.synthetic_images import all_image_samples
+    except ImportError:
+        print("OpenCV is not installed here: photo samples skipped (run this in Docker).")
+        return found
+    return found + all_image_samples()
+
+
 def main() -> None:
     TARGET.mkdir(parents=True, exist_ok=True)
     answers = {}
-    for sample in all_samples():
+    for sample in samples():
         (TARGET / sample.name).write_bytes(sample.data)
         answers[sample.name] = {
             "detected_as": sample.kind,

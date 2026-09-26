@@ -31,6 +31,7 @@ services:
 
   api:
     build: ./backend
+    restart: unless-stopped
     env_file:
       - path: .env
         required: false
@@ -51,7 +52,10 @@ services:
       - ./backend/src:/app/src
       - ./backend/migrations:/app/migrations
       - ./backend/tests:/app/tests
+      - ./backend/scripts:/app/scripts
       - ./data/uploads:/data/uploads
+      # Samples for the benchmark and scripts/make_samples.py (never committed).
+      - ./data/samples:/data/samples
       - ./logs:/app/logs
     depends_on:
       postgres:
@@ -72,6 +76,9 @@ services:
 
   worker:
     build: ./backend
+    # OCR models need ~1.5 GB of memory; if the worker is ever stopped (e.g. out of
+    # memory), it comes back and the recovery task re-queues its files (D-025).
+    restart: unless-stopped
     env_file:
       - path: .env
         required: false
@@ -95,6 +102,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     environment:
       API_PROXY_TARGET: http://api:8000
       VITE_USE_POLLING: "true"

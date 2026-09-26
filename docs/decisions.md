@@ -238,3 +238,21 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (Phase 4)
 - **Decision:** `GET /files/{id}/error-report` returns a PDF: reference number, file details, open and resolved flags, every extraction run with its result and error, and the `run_id` needed to find the log lines. `GET /files/error-reports.zip` holds the originals of all files with problems plus one combined PDF. The PDF is written with ReportLab, which is BSD-licensed. Amounts are printed with "Rs." because the standard PDF fonts have no rupee symbol.
 - **Why:** Chosen by the user, as easy to email or print. ReportLab over PyMuPDF because of the AGPL (D-024 item 6).
+
+## D-032 OCR with PaddleOCR, in Docker
+
+- **Date:** 2026-09-26 (Phase 5)
+- **Decision:**
+  1. PaddleOCR reads scanned PDFs and photos (user's choice).
+  2. Scanned PDF pages are rendered with pypdfium2, which is permissively licensed (user's choice; PyMuPDF stays out, see D-024 item 6).
+  3. Image cleanup uses OpenCV (user's choice). PaddleOCR pins `opencv-contrib-python`, which cannot be installed next to the headless build, so that build is the one used.
+  4. Pillow is not used directly (not approved). OpenCV opens JPG, PNG and WebP and applies phone-photo rotation from EXIF. HEIC photos are not read: they go to `needs_review` with a note asking for a JPG or PNG, and no run is recorded.
+  5. PaddleOCR and PaddlePaddle are an optional `ocr` extra. Only the Docker image installs them, and it downloads the OCR models while the image is built, so recognition runs offline and no receipt image leaves the machine. Without the extra (for example `uv sync` on Windows), scanned PDFs and photos wait in `needs_review` as before.
+  6. OCR text is rebuilt into lines by position and then read by the same rules as text PDFs (labels, text tables, content-based page splitting). A result's confidence is its field confidence times the mean OCR confidence, so a poor read falls below the image and scan threshold and goes to `needs_review`.
+- **Why:** User's choices. The size (about 1.5 GB) and the small free space on the C: drive decide where OCR runs.
+
+## D-033 Synthetic photos for the OCR benchmark
+
+- **Date:** 2026-09-26 (Phase 5)
+- **Decision:** The synthetic receipts are rendered to images and damaged like real photos: rotated, skewed, blurred, noisy, shadowed, faded, and saved as JPEG, PNG and WebP. Some are also wrapped into scanned PDFs. `scripts/benchmark_extractors.py` reports the accuracy of each field (vendor, number, date, subtotal, tax, total) and the resulting status for every sample. Real photos join the benchmark when they are placed in `data/samples/real/` with an `answers.json` in the same format as the synthetic one.
+- **Why:** User's choice, until real photos are available.

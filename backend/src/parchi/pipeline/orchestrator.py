@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from parchi.db.enums import FileStatus, FlagSeverity, FlagType
 from parchi.db.models import ExtractionRun, File, Flag, LineItem, Receipt, Vendor
-from parchi.extraction.base import UnreadableFileError
+from parchi.extraction.base import UnreadableFileError, UnsupportedFormatError
 from parchi.extraction.normalize import clean_vendor
 from parchi.extraction.router import MIN_CONFIDENCE, extractor_for
 from parchi.ingestion.detector import detect
@@ -29,8 +29,8 @@ from parchi.validation.rules import check_receipts, record_problems
 log = get_logger(__name__)
 
 NO_OCR_YET = (
-    "Scanned PDFs and photos are read with OCR, which is not available yet. "
-    "Edit it by hand or wait for the OCR update."
+    "Scanned PDFs and photos are read with OCR, which is not installed here. "
+    "Enter the receipt by hand, or run Parchi in Docker, which includes OCR."
 )
 SYSTEM_ERROR = "A system error stopped processing. It will be retried automatically."
 
@@ -221,6 +221,12 @@ async def _run(session: AsyncSession, storage: Storage, file: Claimed) -> Outcom
     unreadable = False
     try:
         receipts = await asyncio.to_thread(extractor.extract, path)
+    except UnsupportedFormatError as exc:
+        # Nothing wrong with the file; no run, so it can still be read later (D-032).
+        async with session.begin():
+            await _finish(session, file.id, FileStatus.NEEDS_REVIEW, str(exc))
+        log.info("pipeline.unsupported_format", kind=detection.kind.value)
+        return Outcome.NEEDS_REVIEW
     except UnreadableFileError as exc:
         error, unreadable = str(exc), True
     except Exception as exc:  # a parser bug must not lose the file: a person reviews it

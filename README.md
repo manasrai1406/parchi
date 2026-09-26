@@ -4,7 +4,7 @@
 
 Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
-> **Status:** early development. Phases 1–4 of 7 are complete (foundation, upload and registration, library extraction, validation and review). See the [roadmap](#roadmap).
+> **Status:** early development. Phases 1–5 of 7 are complete (foundation, upload and registration, library extraction, validation and review, OCR). See the [roadmap](#roadmap).
 
 ---
 
@@ -44,6 +44,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - File deletion with confirmation, safe for shared copies
 - File-type detection from the bytes, not the file name
 - Library extraction for Excel (.xlsx, .xls), CSV and digital PDFs: vendor, receipt number, date, subtotal, GST and total, plus line items
+- OCR for scanned PDFs and photos (JPG, PNG, WebP) with PaddleOCR: straightens skewed photos, turns sideways and upside-down pages, evens out shadows and fading; poor reads go to review instead of guessing
 - Multi-receipt files: one receipt per sheet, and PDFs split into receipts by content
 - A background worker with automatic recovery and retries
 - Categories: eight built-in ones, plus custom categories you can add, rename and delete
@@ -54,7 +55,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 
 **Planned**
 
-- OCR for scanned PDFs and photos
+- HEIC photos (for now, convert to JPG or PNG)
 - Opt-in AI extraction per file or per batch, with a confirmation step and a daily cap
 - Query page with filters and plain-English questions
 
@@ -80,7 +81,7 @@ Each uploaded file moves through a fixed pipeline: **Receive → Register → De
 | --- | --- |
 | Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic |
 | Data | PostgreSQL 16, Redis 7, ARQ workers |
-| Extraction | pandas, openpyxl, pdfplumber, PyMuPDF, Tesseract / PaddleOCR |
+| Extraction | pandas, openpyxl, xlrd, pdfplumber, pypdfium2, OpenCV, PaddleOCR |
 | AI (opt-in) | Anthropic and OpenAI SDKs behind one interface |
 | Frontend | React, TypeScript, Vite, Tailwind CSS v4, TanStack Query and Table, React Router |
 | Observability | structlog (JSON in production), request ids on every log line |
@@ -91,6 +92,7 @@ Each uploaded file moves through a fixed pipeline: **Receive → Register → De
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with Compose v2)
+- About 6 GB of disk for the images and at least 4 GB of memory for Docker: the OCR models alone need ~1.5 GB when reading photos
 
 ### Run the full stack
 
@@ -109,12 +111,13 @@ docker compose up --build
 
 Database migrations run automatically when the API starts, and a background worker processes uploaded files. The sidebar shows **Connected** once the API, database and Redis are all reachable.
 
-To try it with sample receipts, generate a set of synthetic invoices and receipts (Excel, CSV and PDF, with their expected answers in `answers.json`) and upload them on the Upload page:
+To try it with sample receipts, generate a set of synthetic invoices, receipts, photos and scans (with their expected answers in `answers.json`) and upload them on the Upload page:
 
 ```bash
-cd backend
-uv run python scripts/make_samples.py   # writes to data/samples/synthetic/
+docker compose exec api python scripts/make_samples.py   # writes to data/samples/synthetic/
 ```
+
+OCR (PaddleOCR) is included in the Docker image, with its models downloaded at build time, so images never leave your machine. The first photo after a restart takes about a minute while the models load; later ones take 10–20 seconds on a CPU.
 
 To stop everything:
 
@@ -148,6 +151,8 @@ To process uploads, also run the worker (from `backend/`, on Linux or macOS; on 
 uv run arq parchi.worker.WorkerSettings
 ```
 
+OCR is an optional extra (`uv sync --extra ocr`, about 1.5 GB). Without it, scans and photos wait in review with a note; everything else works.
+
 ### Frontend
 
 Requires Node.js 22+. Run from `frontend/`:
@@ -173,6 +178,14 @@ docker compose exec api pytest
 npm run lint && npm run format:check
 npm test
 npm run build
+```
+
+### Benchmarking the readers
+
+Scores every sample with known answers (synthetic ones, and your own in `data/samples/real/` with an `answers.json` in the same format) and prints per-field accuracy:
+
+```bash
+docker compose exec api python scripts/benchmark_extractors.py
 ```
 
 ### Regenerating API types
@@ -213,7 +226,7 @@ parchi/
 │   ├── src/parchi/
 │   │   ├── api/            FastAPI app, middleware, error handling, routes
 │   │   ├── db/             models, enums, sessions, queries
-│   │   ├── extraction/     detectors, Excel/CSV and PDF readers, normalization
+│   │   ├── extraction/     Excel/CSV, PDF and OCR readers, image cleanup, normalization
 │   │   ├── ingestion/      receive, register, storage, detection, deletion
 │   │   ├── pipeline/       orchestrator, worker jobs, queue, recovery
 │   │   ├── review/         saving edits, rejecting, error reports
@@ -272,8 +285,8 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | 2. Upload and register | Upload, hashing, reference numbers, duplicates, Files page, downloads | ✅ Done |
 | 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | ✅ Done |
 | 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | ✅ Done |
-| 5. OCR and images | Scanned PDFs and photos, image preprocessing, HEIC support | Next |
-| 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | Planned |
+| 5. OCR and images | Scanned PDFs and photos, image preprocessing (HEIC later) | ✅ Done |
+| 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | Next |
 | 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Planned |
 
 ## Documentation

@@ -21,6 +21,13 @@ dependencies = [
     "pdfplumber>=0.11.10",
     "xlrd>=2.0.2",
     "reportlab>=5.0.1",
+    "pypdfium2>=5.13.0",
+]
+
+[project.optional-dependencies]
+ocr = [
+    "paddleocr>=3.7,<3.8",
+    "paddlepaddle>=3.3,<3.4",
 ]
 
 [dependency-groups]

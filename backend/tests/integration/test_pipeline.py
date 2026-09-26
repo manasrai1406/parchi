@@ -129,20 +129,26 @@ def test_a_file_that_needs_review_keeps_its_result_on_the_run(
     assert "date and total" in api.get(f"/files/{file['id']}").json()["error"]
 
 
-def test_scans_wait_for_ocr_without_a_run(
-    api: TestClient, storage_dir: str, engine: Engine
-) -> None:
+def test_a_blank_scan_goes_to_review(api: TestClient, storage_dir: str, engine: Engine) -> None:
+    """With OCR (Docker) the blank page is read and found empty; without it, the file
+    waits with a note and no run is recorded, so it can be read later (D-032)."""
+    from parchi.extraction import ocr
+
     sample = next(s for s in SAMPLES if s.name == "scanned_receipt.pdf")
     file = upload(api, sample)
     process(storage_dir, file["id"])
 
     after = api.get(f"/files/{file['id']}").json()
-    assert (after["status"], after["kind"], after["error"]) == (
-        "needs_review",
-        "pdf_scan",
-        NO_OCR_YET,
+    runs = query(
+        engine, "SELECT parser, accepted FROM extraction_runs WHERE file_id = :f", f=file["id"]
     )
-    assert query(engine, "SELECT id FROM extraction_runs WHERE file_id = :f", f=file["id"]) == []
+    assert (after["status"], after["kind"]) == ("needs_review", "pdf_scan")
+    if ocr.available():
+        assert after["error"] == "No receipt could be found in this file."
+        assert [tuple(r) for r in runs] == [("pdf_scan", False)]
+    else:
+        assert after["error"] == NO_OCR_YET
+        assert runs == []
 
 
 def test_unreadable_files_are_flagged(api: TestClient, storage_dir: str, engine: Engine) -> None:

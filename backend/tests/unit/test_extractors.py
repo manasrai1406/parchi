@@ -84,9 +84,11 @@ def test_two_page_invoice_is_one_receipt_across_both_pages(tmp_path: Path) -> No
     assert receipt.source == "pages 1-2"
 
 
-def test_scans_and_images_have_no_library_extractor_yet() -> None:
-    assert extractor_for(FileKind.PDF_SCAN) is None
-    assert extractor_for(FileKind.IMAGE) is None
+def test_scans_and_images_are_read_only_where_ocr_is_installed() -> None:
+    from parchi.extraction import ocr
+
+    for kind in (FileKind.PDF_SCAN, FileKind.IMAGE):
+        assert (extractor_for(kind) is not None) == ocr.available()
 
 
 def test_the_longest_label_wins() -> None:
