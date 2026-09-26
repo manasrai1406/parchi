@@ -204,3 +204,9 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   3. Date labels are tried strongest first: "Invoice Date" wins over "Order Date" or a plain "Date".
   4. A vendor name that differs from an existing one only in capitalisation gets the same normalized name (it keeps its own raw name), so the two group together (refines D-024 item 3).
 - **Why:** The first version read the GST rate as the tax amount and found no line items on this layout, which is common for marketplace and billing-software invoices. A synthetic sample with the same layout (`marketplace_invoices.pdf`) keeps it tested without committing the real receipt.
+
+## D-028 Query page dates: pickers, defaulting to this financial year
+
+- **Date:** 2026-09-26 (recorded ahead of Phase 7)
+- **Decision:** The Query page's **From** and **To** filters are date pickers, not text boxes. They open on the current Indian financial year to date: From is 1 April of the current financial year and To is today, in `APP_TIMEZONE`. Before 1 April, that is 1 April of the previous calendar year. Changing either date re-runs the filters. From cannot be later than To. A plain-English question that names a period ("fuel in August") uses that period instead, and the page shows the range it used.
+- **Why:** Chosen by the user. The financial year is the period expenses are usually totalled and filed for.
