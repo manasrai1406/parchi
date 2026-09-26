@@ -13,15 +13,20 @@ from typing import Any
 
 # Used for every file, and by scripts/download_ocr_models.py when the image is built.
 ENGINE_OPTIONS: dict[str, Any] = {
-    "lang": "en",
+    # Mobile models: several times less memory than the default "medium" ones, which ran
+    # Docker out of memory on an 8 GB laptop (D-034). Receipts are printed English text.
+    "text_detection_model_name": "PP-OCRv5_mobile_det",
+    "text_recognition_model_name": "en_PP-OCRv5_mobile_rec",
     # Pages photographed sideways or upside down are turned the right way up.
     "use_doc_orientation_classify": True,
     # Flattening curled paper is slow on a CPU and rarely needed for receipts.
     "use_doc_unwarping": False,
-    "use_textline_orientation": True,
+    # Per-line orientation is a further model; the page orientation above covers photos.
+    "use_textline_orientation": False,
     # PaddlePaddle 3.3's oneDNN acceleration fails on some models ("ConvertPirAttribute2
     # RuntimeAttribute not support"); plain CPU inference is slower but reliable.
     "enable_mkldnn": False,
+    "cpu_threads": 2,
 }
 
 _lock = threading.Lock()

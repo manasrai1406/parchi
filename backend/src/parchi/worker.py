@@ -39,4 +39,5 @@ class WorkerSettings:
     job_timeout = 300  # D-025: a job is stopped after 5 minutes
     max_tries = 1  # retries are handled by the recovery task, with backoff
     keep_result = 0  # so the same file can be queued again once its job is done
-    max_jobs = 4
+    # OCR runs one page at a time anyway; fewer jobs keep memory low (D-034).
+    max_jobs = 2

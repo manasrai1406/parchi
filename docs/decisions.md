@@ -256,3 +256,10 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-26 (Phase 5)
 - **Decision:** The synthetic receipts are rendered to images and damaged like real photos: rotated, skewed, blurred, noisy, shadowed, faded, and saved as JPEG, PNG and WebP. Some are also wrapped into scanned PDFs. `scripts/benchmark_extractors.py` reports the accuracy of each field (vendor, number, date, subtotal, tax, total) and the resulting status for every sample. Real photos join the benchmark when they are placed in `data/samples/real/` with an `answers.json` in the same format as the synthetic one.
 - **Why:** User's choice, until real photos are available.
+
+## D-034 Mobile OCR models, to fit in memory
+
+- **Date:** 2026-09-26 (Phase 5)
+- **Decision:** PaddleOCR uses its mobile models (`PP-OCRv5_mobile_det` and `en_PP-OCRv5_mobile_rec`) instead of the default medium ones, with no per-line orientation model, 2 CPU threads, and at most 2 worker jobs at a time. Page orientation (sideways, upside down) is still corrected.
+- **Why:** On an 8 GB laptop, Docker gets about 3.7 GB, and the medium models ran it out of memory. With the mobile models the worker peaks at about 380 MB instead of 850 MB or more. On the synthetic photos and scans they were also faster (2–9 s against 10–16 s a photo) and at least as accurate: every sample reached its expected status, and the scanned marketplace invoice went from 8/12 to 12/12 fields right.
+- **Revisit:** if real photos read poorly, the medium models can be tried again on a machine with more memory.
