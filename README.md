@@ -4,7 +4,7 @@
 
 Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
-> **Status:** early development. Phases 1–6 of 7 are complete (foundation, upload and registration, library extraction, validation and review, OCR, opt-in AI). See the [roadmap](#roadmap).
+> **Status:** all seven planned phases are complete (foundation, upload and registration, library extraction, validation and review, OCR, opt-in AI, query and hardening). See the [roadmap](#roadmap).
 
 ---
 
@@ -55,11 +55,14 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 
 - Opt-in AI extraction with Claude or OpenAI, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
 - AI results side by side with the library result on the Review page; disagreements are flagged for you to choose
+- Query page: filters for dates (this financial year by default), vendor, category and amount, with the count, total and average, pages of 50, and CSV export
+- Plain-English questions such as "fuel in August" or "top 5 receipts this financial year", read by built-in rules (no AI): the page shows how the question was understood and the SQL that ran, on read-only database access
+- CI on every push: ruff, pytest, ESLint, Prettier, Vitest and a production build
 
 **Planned**
 
-- HEIC photos (for now, convert to JPG or PNG) extraction per file or per batch, with a confirmation step and a daily cap
-- Query page with filters and plain-English questions
+- HEIC photos (for now, convert to JPG or PNG)
+- Login and user roles, cloud deployment, and exports beyond CSV
 
 ## Architecture
 
@@ -248,6 +251,7 @@ parchi/
 │   │   ├── extraction/     Excel/CSV, PDF and OCR readers, image cleanup, normalization
 │   │   ├── ingestion/      receive, register, storage, detection, deletion
 │   │   ├── pipeline/       orchestrator, worker jobs, queue, recovery
+│   │   ├── query/          Query filters, plain-English question reader, read-only access
 │   │   ├── review/         saving edits, rejecting, error reports
 │   │   ├── validation/     required fields, arithmetic, dates, duplicates
 │   │   ├── schemas/        API request and response models
@@ -294,6 +298,10 @@ Interactive documentation is available at `/docs` when the API is running. Curre
 | `POST` | `/categories` | Add a custom category |
 | `PATCH` | `/categories/{id}` | Rename a custom category |
 | `DELETE` | `/categories/{id}` | Delete an unused custom category |
+| `GET` | `/receipts` | Receipts from parsed and resolved files: filter by dates, vendor, category and amount; totals and pages of 50 |
+| `GET` | `/receipts/export.csv` | The same receipts as CSV, every page |
+| `GET` | `/vendors` | Vendor names that have receipts, for the vendor filter |
+| `POST` | `/query/ask` | A plain-English question: how it was read, the SQL that ran, and the first page |
 | `GET` | `/health` | Liveness |
 | `GET` | `/health/ready` | Readiness of PostgreSQL and Redis |
 
@@ -309,7 +317,7 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | ✅ Done |
 | 5. OCR and images | Scanned PDFs and photos, image preprocessing (HEIC later) | ✅ Done |
 | 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | ✅ Done |
-| 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Next |
+| 7. Query and hardening | Filters, plain-English queries on read-only access, CSV export, CI | ✅ Done |
 
 ## Documentation
 
