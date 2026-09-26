@@ -205,3 +205,48 @@ export function useApproveAi() {
       ]),
   });
 }
+
+export type ReceiptPage = Schemas["ReceiptPage"];
+export type AskOut = Schemas["AskOut"];
+/** The Query page's filters; the page number travels separately. */
+export type ReceiptFilters = Partial<Omit<Schemas["ReceiptQuery"], "page">>;
+
+/** Filters as query parameters, leaving out the ones not set. */
+export function receiptParams(filters: ReceiptFilters, page?: number): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== null && value !== undefined && value !== "") params.set(key, String(value));
+  }
+  if (page && page > 1) params.set("page", String(page));
+  return params;
+}
+
+export function receiptsKey(filters: ReceiptFilters, page: number) {
+  return ["receipts", filters, page] as const;
+}
+
+/** Receipts from parsed and resolved files; with no dates, the financial year to date. */
+export function useReceipts(filters: ReceiptFilters, page: number) {
+  return useQuery({
+    queryKey: receiptsKey(filters, page),
+    queryFn: () => apiGet<ReceiptPage>(`/receipts?${receiptParams(filters, page)}`),
+    // Long enough that the first page an answer brought is not fetched again at once.
+    staleTime: 10_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function receiptsCsvUrl(filters: ReceiptFilters): string {
+  return `/api/receipts/export.csv?${receiptParams(filters)}`;
+}
+
+export function useVendors() {
+  return useQuery({ queryKey: ["vendors"], queryFn: () => apiGet<string[]>("/vendors") });
+}
+
+/** A plain-English question, read by rules on the server. Nothing goes to an AI provider. */
+export function useAsk() {
+  return useMutation({
+    mutationFn: (question: string) => apiSend<AskOut>("POST", "/query/ask", { question }),
+  });
+}

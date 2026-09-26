@@ -378,6 +378,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Receipts
+         * @description Receipts from parsed and resolved files. With no dates, the financial year to date.
+         */
+        get: operations["list_receipts_receipts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Receipts
+         * @description Every matching receipt, one row each, whatever the page (D-039).
+         */
+        get: operations["export_receipts_receipts_export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vendors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Vendors
+         * @description Vendor names that have receipts, A to Z, for the Query page's vendor filter.
+         */
+        get: operations["list_vendors_vendors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/query/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask
+         * @description How the question was read, the SQL that ran, and the first page of receipts.
+         *
+         *     Nothing is sent to an AI provider. Later pages come from `GET /receipts` with the
+         *     returned `filters`.
+         */
+        post: operations["ask_query_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -454,6 +537,30 @@ export interface components {
             remaining: number;
             /** Providers */
             providers: components["schemas"]["AiProviderInfo"][];
+        };
+        /** AskIn */
+        AskIn: {
+            /** Question */
+            question: string;
+        };
+        /** AskOut */
+        AskOut: {
+            /** Question */
+            question: string;
+            /** Understood As */
+            understood_as: components["schemas"]["Understood"][];
+            /**
+             * Ignored
+             * @description Words the reader did not understand
+             */
+            ignored: string[];
+            filters: components["schemas"]["ReceiptQuery"];
+            /**
+             * Sql
+             * @description The query that ran, on read-only access
+             */
+            sql: string;
+            result: components["schemas"]["ReceiptPage"];
         };
         /** BatchDetail */
         BatchDetail: {
@@ -811,6 +918,95 @@ export interface components {
             /** Line Items */
             line_items: components["schemas"]["LineItemOut"][];
         };
+        /** ReceiptPage */
+        ReceiptPage: {
+            /** Items */
+            items: components["schemas"]["ReceiptRow"][];
+            /**
+             * Count
+             * @description Every matching receipt, not just this page
+             */
+            count: number;
+            /** Sum Total */
+            sum_total: string;
+            /** Average Total */
+            average_total: string | null;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /**
+             * Waiting For Review
+             * @description Files not counted until a person reviews them
+             */
+            waiting_for_review: number;
+        };
+        /**
+         * ReceiptQuery
+         * @description Filters for the Query page. With neither date, the financial year to date (D-028).
+         */
+        ReceiptQuery: {
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Vendor
+             * @description A normalized name
+             */
+            vendor?: string | null;
+            /** Category Id */
+            category_id?: number | null;
+            /** Min Total */
+            min_total?: string | null;
+            /** Max Total */
+            max_total?: string | null;
+            /**
+             * Sort
+             * @description date: oldest first; amount: largest first
+             * @default date
+             * @enum {string}
+             */
+            sort: "date" | "amount";
+            /**
+             * Limit
+             * @description Only the first N, e.g. top 5
+             */
+            limit?: number | null;
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+        };
+        /** ReceiptRow */
+        ReceiptRow: {
+            /** Ref No */
+            ref_no: string;
+            /** File Ref No */
+            file_ref_no: string;
+            /**
+             * Receipt Date
+             * Format: date
+             */
+            receipt_date: string;
+            /** Vendor */
+            vendor: string;
+            /** Receipt Number */
+            receipt_number: string | null;
+            /** Category */
+            category: string | null;
+            /** Subtotal */
+            subtotal: string | null;
+            /** Tax */
+            tax: string | null;
+            /** Total */
+            total: string;
+        };
         /** ReceiptSchema */
         ReceiptSchema: {
             /** Vendor */
@@ -893,6 +1089,13 @@ export interface components {
          * @enum {string}
          */
         RunParser: "excel" | "csv" | "pdf_text" | "pdf_scan" | "image" | "ai" | "manual";
+        /** Understood */
+        Understood: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1824,6 +2027,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_receipts_receipts_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description A normalized name */
+                vendor?: string | null;
+                category_id?: number | null;
+                min_total?: number | string | null;
+                max_total?: number | string | null;
+                /** @description date: oldest first; amount: largest first */
+                sort?: "date" | "amount";
+                /** @description Only the first N, e.g. top 5 */
+                limit?: number | null;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptPage"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_receipts_receipts_export_csv_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description A normalized name */
+                vendor?: string | null;
+                category_id?: number | null;
+                min_total?: number | string | null;
+                max_total?: number | string | null;
+                /** @description date: oldest first; amount: largest first */
+                sort?: "date" | "amount";
+                /** @description Only the first N, e.g. top 5 */
+                limit?: number | null;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_vendors_vendors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    ask_query_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

@@ -1215,6 +1215,454 @@
           }
         }
       }
+    },
+    "/receipts": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "List Receipts",
+        "description": "Receipts from parsed and resolved files. With no dates, the financial year to date.",
+        "operationId": "list_receipts_receipts_get",
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "vendor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A normalized name",
+              "title": "Vendor"
+            },
+            "description": "A normalized name"
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "min_total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Total"
+            }
+          },
+          {
+            "name": "max_total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Total"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date",
+                "amount"
+              ],
+              "type": "string",
+              "description": "date: oldest first; amount: largest first",
+              "default": "date",
+              "title": "Sort"
+            },
+            "description": "date: oldest first; amount: largest first"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 500,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only the first N, e.g. top 5",
+              "title": "Limit"
+            },
+            "description": "Only the first N, e.g. top 5"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/receipts/export.csv": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Export Receipts",
+        "description": "Every matching receipt, one row each, whatever the page (D-039).",
+        "operationId": "export_receipts_receipts_export_csv_get",
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "vendor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A normalized name",
+              "title": "Vendor"
+            },
+            "description": "A normalized name"
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "min_total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Total"
+            }
+          },
+          {
+            "name": "max_total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Total"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date",
+                "amount"
+              ],
+              "type": "string",
+              "description": "date: oldest first; amount: largest first",
+              "default": "date",
+              "title": "Sort"
+            },
+            "description": "date: oldest first; amount: largest first"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 500,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only the first N, e.g. top 5",
+              "title": "Limit"
+            },
+            "description": "Only the first N, e.g. top 5"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/vendors": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "List Vendors",
+        "description": "Vendor names that have receipts, A to Z, for the Query page's vendor filter.",
+        "operationId": "list_vendors_vendors_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Vendors Vendors Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/query/ask": {
+      "post": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Ask",
+        "description": "How the question was read, the SQL that ran, and the first page of receipts.\n\nNothing is sent to an AI provider. Later pages come from `GET /receipts` with the\nreturned `filters`.",
+        "operationId": "ask_query_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1379,6 +1827,65 @@
           "providers"
         ],
         "title": "AiUsage"
+      },
+      "AskIn": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AskIn"
+      },
+      "AskOut": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "understood_as": {
+            "items": {
+              "$ref": "#/components/schemas/Understood"
+            },
+            "type": "array",
+            "title": "Understood As"
+          },
+          "ignored": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ignored",
+            "description": "Words the reader did not understand"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/ReceiptQuery"
+          },
+          "sql": {
+            "type": "string",
+            "title": "Sql",
+            "description": "The query that ran, on read-only access"
+          },
+          "result": {
+            "$ref": "#/components/schemas/ReceiptPage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "understood_as",
+          "ignored",
+          "filters",
+          "sql",
+          "result"
+        ],
+        "title": "AskOut"
       },
       "BatchDetail": {
         "properties": {
@@ -2383,6 +2890,284 @@
         ],
         "title": "ReceiptOut"
       },
+      "ReceiptPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Every matching receipt, not just this page"
+          },
+          "sum_total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sum Total"
+          },
+          "average_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "waiting_for_review": {
+            "type": "integer",
+            "title": "Waiting For Review",
+            "description": "Files not counted until a person reviews them"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "count",
+          "sum_total",
+          "average_total",
+          "page",
+          "page_size",
+          "date_from",
+          "date_to",
+          "waiting_for_review"
+        ],
+        "title": "ReceiptPage"
+      },
+      "ReceiptQuery": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "vendor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vendor",
+            "description": "A normalized name"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "min_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Total"
+          },
+          "max_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Total"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "date",
+              "amount"
+            ],
+            "title": "Sort",
+            "description": "date: oldest first; amount: largest first",
+            "default": "date"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "Only the first N, e.g. top 5"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ReceiptQuery",
+        "description": "Filters for the Query page. With neither date, the financial year to date (D-028)."
+      },
+      "ReceiptRow": {
+        "properties": {
+          "ref_no": {
+            "type": "string",
+            "title": "Ref No"
+          },
+          "file_ref_no": {
+            "type": "string",
+            "title": "File Ref No"
+          },
+          "receipt_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Receipt Date"
+          },
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "receipt_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Number"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "subtotal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtotal"
+          },
+          "tax": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref_no",
+          "file_ref_no",
+          "receipt_date",
+          "vendor",
+          "receipt_number",
+          "category",
+          "subtotal",
+          "tax",
+          "total"
+        ],
+        "title": "ReceiptRow"
+      },
       "ReceiptSchema": {
         "properties": {
           "vendor": {
@@ -2700,6 +3485,24 @@
           "manual"
         ],
         "title": "RunParser"
+      },
+      "Understood": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "Understood"
       },
       "ValidationError": {
         "properties": {
