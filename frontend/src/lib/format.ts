@@ -43,3 +43,28 @@ export function extensionLabel(name: string): string {
         .slice(0, 4)
     : "FILE";
 }
+
+const RUPEES = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  minimumFractionDigits: 2,
+});
+
+/** "₹1,23,456.50" with Indian digit grouping. Amounts arrive from the API as strings. */
+export function formatRupees(amount: string | number | null | undefined): string {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  const value = typeof amount === "number" ? amount : Number(amount);
+  return Number.isFinite(value) ? RUPEES.format(value) : String(amount);
+}
+
+/** "14 Aug 2026" from an ISO date. */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return iso;
+  return new Date(year, month - 1, day).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

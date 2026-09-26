@@ -1,13 +1,17 @@
 import { createColumnHelper, flexRender, tableFeatures, useTable } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileWarning, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import {
+  ALL_ERROR_REPORTS_URL,
   BUSY,
   downloadUrl,
+  errorReportUrl,
+  needsAttention,
   useDeleteFile,
   useFiles,
+  useSummary,
   type FileStatus,
   type FileSummary,
 } from "@/api/queries";
@@ -20,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
 
-// Chip order from the design. Counts per chip arrive with GET /files/summary in phase 4.
+// Chip order from the design, with counts from GET /files/summary.
 const CHIPS: (FileStatus | "all")[] = [
   "all",
   "pending",
@@ -52,7 +56,23 @@ function makeColumns(onDelete: (file: FileSummary) => void) {
               {file.original_name}
             </span>
             <span className="font-mono text-xs text-muted">{file.ref_no}</span>
-            {file.error && <span className="text-[13px] text-flagged">{file.error}</span>}
+            {file.error && (
+              <span
+                className={cn(
+                  "text-[13px]",
+                  file.status === "needs_review" ? "text-review" : "text-flagged",
+                )}
+              >
+                {file.error}
+              </span>
+            )}
+            {!file.error && file.open_flags > 0 && (
+              <span className="text-[13px] text-review">
+                {file.open_flags === 1
+                  ? "1 check to look at"
+                  : `${file.open_flags} checks to look at`}
+              </span>
+            )}
             {file.duplicate_of && (
               <span className="text-[13px] text-muted">
                 Copy of <span className="font-mono">{file.duplicate_of.ref_no}</span>
@@ -77,6 +97,15 @@ function makeColumns(onDelete: (file: FileSummary) => void) {
       header: () => <span className="block text-right">Actions</span>,
       cell: ({ row: { original: file } }) => (
         <div className="flex justify-end gap-2">
+          {needsAttention(file) && (
+            <Link
+              to={`/review/${file.ref_no}`}
+              className="inline-flex h-11 items-center rounded-[10px] bg-accent px-4 text-sm font-semibold text-on-accent"
+              aria-label={`Review ${file.original_name}`}
+            >
+              Review
+            </Link>
+          )}
           <a
             href={downloadUrl(file)}
             download
@@ -86,6 +115,16 @@ function makeColumns(onDelete: (file: FileSummary) => void) {
             <Download size={18} strokeWidth={1.8} aria-hidden="true" />
             File
           </a>
+          {needsAttention(file) && (
+            <a
+              href={errorReportUrl(file)}
+              className="inline-flex size-11 items-center justify-center rounded-[10px] border border-input bg-raised"
+              aria-label={`Error report for ${file.original_name}`}
+              title="Error report (PDF)"
+            >
+              <FileWarning size={18} strokeWidth={1.8} aria-hidden="true" />
+            </a>
+          )}
           <button
             type="button"
             onClick={() => onDelete(file)}
@@ -104,7 +143,38 @@ function makeColumns(onDelete: (file: FileSummary) => void) {
   ]);
 }
 
-const GRID = "grid grid-cols-[minmax(0,1fr)_140px_140px_180px] gap-x-4 px-6";
+const GRID = "grid grid-cols-[minmax(0,1fr)_140px_140px_300px] gap-x-4 px-6";
+
+type Summary = NonNullable<ReturnType<typeof useSummary>["data"]>;
+
+function countOf(summary: Summary | undefined, ...statuses: FileStatus[]): number | undefined {
+  if (!summary) return undefined;
+  return statuses.reduce((sum, status) => sum + (summary.by_status[status] ?? 0), 0);
+}
+
+function SummaryCard({
+  label,
+  count,
+  note,
+  tone,
+}: {
+  label: string;
+  count: number | undefined;
+  note: string;
+  tone: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-2xl border border-border bg-card px-5 py-4.5 shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+      <span className="text-xs font-semibold tracking-[0.1em] text-muted uppercase">{label}</span>
+      <div className="flex items-baseline gap-3">
+        <span className={cn("font-heading text-[40px] leading-none font-semibold", tone)}>
+          {count ?? "–"}
+        </span>
+        <span className="text-sm text-muted">{note}</span>
+      </div>
+    </div>
+  );
+}
 
 function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -137,6 +207,7 @@ export function FilesPage() {
   }, [q, setParams]);
 
   const { data, isPending, isError, error } = useFiles({ status, q, page, pageSize: PAGE_SIZE });
+  const { data: summary } = useSummary();
 
   const [toDelete, setToDelete] = useState<FileSummary | null>(null);
   const deletion = useDeleteFile();
@@ -171,7 +242,47 @@ export function FilesPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Status" title="Files" />
+      <div className="flex items-end justify-between gap-6">
+        <PageHeader eyebrow="Status" title="Files" />
+        <a
+          href={ALL_ERROR_REPORTS_URL}
+          className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-input bg-raised px-4.5 text-sm font-medium"
+        >
+          <Download size={18} strokeWidth={1.8} aria-hidden="true" />
+          Download all flagged (.zip)
+        </a>
+      </div>
+
+      <section aria-label="Summary" className="flex gap-4">
+        <SummaryCard
+          label="Needs review"
+          count={countOf(summary, "needs_review")}
+          note="Awaiting a decision"
+          tone="text-review"
+        />
+        <SummaryCard
+          label="Flagged"
+          count={countOf(summary, "flagged")}
+          note="Unreadable or a conflict"
+          tone="text-flagged"
+        />
+        <SummaryCard
+          label="Parsed"
+          count={countOf(summary, "parsed")}
+          note={
+            summary?.with_warnings
+              ? `${summary.with_warnings} with checks to look at`
+              : "Ready to query"
+          }
+          tone="text-success-text"
+        />
+        <SummaryCard
+          label="In progress"
+          count={countOf(summary, "pending", "processing", "ai_processing")}
+          note="Queued or running"
+          tone="text-processing"
+        />
+      </section>
 
       <div className="flex items-center justify-between gap-4">
         <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
@@ -191,6 +302,11 @@ export function FilesPage() {
                 )}
               >
                 {chip === "all" ? "All" : STATUS_LABELS[chip]}
+                {summary && (
+                  <span className="ml-2 font-normal opacity-75">
+                    {chip === "all" ? summary.total : countOf(summary, chip)}
+                  </span>
+                )}
               </button>
             );
           })}

@@ -115,6 +115,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Summary
+         * @description Counts per status, for the summary cards, chips and sidebar badges.
+         */
+        get: operations["get_summary_files_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/error-reports.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All Error Reports
+         * @description The originals of every file needing attention, plus one combined PDF report.
+         */
+        get: operations["all_error_reports_files_error_reports_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/files/{file_key}": {
         parameters: {
             query?: never;
@@ -124,7 +164,7 @@ export interface paths {
         };
         /**
          * Get One File
-         * @description One file, by id or reference number.
+         * @description One file, by id or reference number, with its receipts, flags and runs.
          */
         get: operations["get_one_file_files__file_key__get"];
         put?: never;
@@ -153,6 +193,66 @@ export interface paths {
         get: operations["download_file_files__file_key__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{file_key}/error-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Error Report
+         * @description A PDF with the file's problems and what each reader found (D-031).
+         */
+        get: operations["error_report_files__file_key__error_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{file_key}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Receipts
+         * @description Save a person's edits as the accepted result; the file becomes resolved (D-030).
+         */
+        put: operations["save_receipts_files__file_key__receipts_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{file_key}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject
+         * @description Not a receipt, or a bad scan (D-030 item 4).
+         */
+        post: operations["reject_files__file_key__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -201,10 +301,32 @@ export interface paths {
         patch: operations["rename_category_categories__category_id__patch"];
         trace?: never;
     };
+    "/flags/{flag_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve */
+        post: operations["resolve_flags__flag_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AiProvider
+         * @enum {string}
+         */
+        AiProvider: "anthropic" | "openai";
         /** BatchDetail */
         BatchDetail: {
             /** Id */
@@ -281,6 +403,63 @@ export interface components {
             request_id: string | null;
         };
         /**
+         * FileCounts
+         * @description For the summary cards, the status chips and the sidebar badges.
+         */
+        FileCounts: {
+            /** Total */
+            total: number;
+            /** By Status */
+            by_status: {
+                [key: string]: number;
+            };
+            /**
+             * With Warnings
+             * @description Parsed files that have open warning flags
+             */
+            with_warnings: number;
+            /**
+             * Needs Attention
+             * @description Needs review + flagged + parsed with warnings: the Review queue
+             */
+            needs_attention: number;
+        };
+        /**
+         * FileDetail
+         * @description Everything the Review page shows for one file.
+         */
+        FileDetail: {
+            /** Id */
+            id: number;
+            /** Ref No */
+            ref_no: string;
+            /** Original Name */
+            original_name: string;
+            /** Size Bytes */
+            size_bytes: number;
+            kind: components["schemas"]["FileKind"] | null;
+            status: components["schemas"]["FileStatus"];
+            /** Error */
+            error: string | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            duplicate_of: components["schemas"]["FileRef"] | null;
+            /**
+             * Open Flags
+             * @description Unresolved problems a person should look at
+             */
+            open_flags: number;
+            /** Receipts */
+            receipts: components["schemas"]["ReceiptOut"][];
+            /** Flags */
+            flags: components["schemas"]["FlagOut"][];
+            /** Runs */
+            runs: components["schemas"]["RunOut"][];
+        };
+        /**
          * FileKind
          * @enum {string}
          */
@@ -333,7 +512,44 @@ export interface components {
              */
             uploaded_at: string;
             duplicate_of: components["schemas"]["FileRef"] | null;
+            /**
+             * Open Flags
+             * @description Unresolved problems a person should look at
+             */
+            open_flags: number;
         };
+        /** FlagOut */
+        FlagOut: {
+            /** Id */
+            id: number;
+            type: components["schemas"]["FlagType"];
+            severity: components["schemas"]["FlagSeverity"];
+            /** Detail */
+            detail: string;
+            /** Receipt Id */
+            receipt_id: number | null;
+            /** Resolved */
+            resolved: boolean;
+            /** Resolved By */
+            resolved_by: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * FlagSeverity
+         * @enum {string}
+         */
+        FlagSeverity: "info" | "warning" | "error";
+        /**
+         * FlagType
+         * @enum {string}
+         */
+        FlagType: "unreadable" | "validation_failed" | "parser_conflict" | "duplicate_receipt" | "arithmetic_mismatch";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -346,6 +562,46 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** LineItemIn */
+        LineItemIn: {
+            /** Description */
+            description: string;
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Unit Price */
+            unit_price?: number | string | null;
+            /** Amount */
+            amount: number | string;
+        };
+        /** LineItemOut */
+        LineItemOut: {
+            /** Position */
+            position: number;
+            /** Description */
+            description: string;
+            /** Quantity */
+            quantity: string | null;
+            /** Unit Price */
+            unit_price: string | null;
+            /** Amount */
+            amount: string;
+        };
+        /** LineItemSchema */
+        LineItemSchema: {
+            /** Description */
+            description: string;
+            /** Quantity */
+            quantity?: string | null;
+            /** Unit Price */
+            unit_price?: string | null;
+            /** Amount */
+            amount: string;
+        };
+        /** ManualEdit */
+        ManualEdit: {
+            /** Receipts */
+            receipts: components["schemas"]["ReceiptIn"][];
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -365,6 +621,89 @@ export interface components {
              */
             redis: "ok";
         };
+        /**
+         * ReceiptIn
+         * @description A receipt as a person entered or corrected it on the Review page.
+         */
+        ReceiptIn: {
+            /** Vendor */
+            vendor: string;
+            /** Receipt Number */
+            receipt_number?: string | null;
+            /**
+             * Receipt Date
+             * Format: date
+             */
+            receipt_date: string;
+            /** Subtotal */
+            subtotal?: number | string | null;
+            /** Tax */
+            tax?: number | string | null;
+            /** Total */
+            total: number | string;
+            /**
+             * Category Id
+             * @description The person's category choice
+             */
+            category_id?: number | null;
+            /** Line Items */
+            line_items?: components["schemas"]["LineItemIn"][];
+        };
+        /** ReceiptOut */
+        ReceiptOut: {
+            /** Id */
+            id: number;
+            /** Ref No */
+            ref_no: string;
+            /** Seq */
+            seq: number;
+            /** Vendor */
+            vendor: string;
+            /** Receipt Number */
+            receipt_number: string | null;
+            /**
+             * Receipt Date
+             * Format: date
+             */
+            receipt_date: string;
+            /** Subtotal */
+            subtotal: string | null;
+            /** Tax */
+            tax: string | null;
+            /** Total */
+            total: string;
+            /** Category Id */
+            category_id: number | null;
+            /** Category Auto Id */
+            category_auto_id: number | null;
+            /** Category Override Id */
+            category_override_id: number | null;
+            /** Confidence */
+            confidence: number | null;
+            /** Line Items */
+            line_items: components["schemas"]["LineItemOut"][];
+        };
+        /** ReceiptSchema */
+        ReceiptSchema: {
+            /** Vendor */
+            vendor?: string | null;
+            /** Receipt Number */
+            receipt_number?: string | null;
+            /** Receipt Date */
+            receipt_date?: string | null;
+            /** Subtotal */
+            subtotal?: string | null;
+            /** Tax */
+            tax?: string | null;
+            /** Total */
+            total?: string | null;
+            /** Line Items */
+            line_items?: components["schemas"]["LineItemSchema"][];
+            /** Confidence */
+            confidence: number;
+            /** Source */
+            source: string;
+        };
         /** RegisteredResult */
         RegisteredResult: {
             /**
@@ -374,6 +713,52 @@ export interface components {
             result: "registered";
             file: components["schemas"]["FileSummary"];
         };
+        /** RejectIn */
+        RejectIn: {
+            /**
+             * Reason
+             * @description e.g. Not a receipt
+             */
+            reason: string;
+        };
+        /**
+         * RunOut
+         * @description One extraction attempt. `result` is what that reader found, accepted or not.
+         */
+        RunOut: {
+            /** Id */
+            id: number;
+            parser: components["schemas"]["RunParser"];
+            provider: components["schemas"]["AiProvider"] | null;
+            /** Model */
+            model: string | null;
+            /** Confidence */
+            confidence: number | null;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /** Accepted */
+            accepted: boolean;
+            /** Error */
+            error: string | null;
+            /** Ai Approved By */
+            ai_approved_by: string | null;
+            /** Ai Approved At */
+            ai_approved_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Result */
+            result: components["schemas"]["ReceiptSchema"][] | null;
+        };
+        /**
+         * RunParser
+         * @enum {string}
+         */
+        RunParser: "excel" | "csv" | "pdf_text" | "pdf_scan" | "image" | "ai" | "manual";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -591,6 +976,8 @@ export interface operations {
                 status?: components["schemas"]["FileStatus"] | null;
                 /** @description Name or reference */
                 q?: string | null;
+                /** @description Only files a person should look at (the Review queue) */
+                attention?: boolean;
                 page?: number;
                 page_size?: number;
             };
@@ -620,6 +1007,46 @@ export interface operations {
             };
         };
     };
+    get_summary_files_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileCounts"];
+                };
+            };
+        };
+    };
+    all_error_reports_files_error_reports_zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+        };
+    };
     get_one_file_files__file_key__get: {
         parameters: {
             query?: never;
@@ -637,7 +1064,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileSummary"];
+                    "application/json": components["schemas"]["FileDetail"];
                 };
             };
             /** @description Not Found */
@@ -709,7 +1136,10 @@ export interface operations {
     };
     download_file_files__file_key__download_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Show in the browser (PDFs and images) */
+                inline?: boolean;
+            };
             header?: never;
             path: {
                 file_key: string;
@@ -743,6 +1173,152 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    error_report_files__file_key__error_report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_receipts_files__file_key__receipts_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reject_files__file_key__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -900,6 +1476,46 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_flags__flag_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flag_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlagOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

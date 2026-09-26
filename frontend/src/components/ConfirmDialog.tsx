@@ -40,7 +40,9 @@ export function ConfirmDialog({
         if (event.key === "Tab") {
           // Keep focus inside the dialog.
           const buttons = Array.from(
-            event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+            event.currentTarget.querySelectorAll<HTMLElement>(
+              "button:not(:disabled), input:not(:disabled), select, textarea, a[href]",
+            ),
           );
           const first = buttons[0];
           const last = buttons.at(-1);

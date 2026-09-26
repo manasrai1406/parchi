@@ -21,6 +21,7 @@ function summary(id: number, name: string, extra: Record<string, unknown> = {}) 
     error: null,
     uploaded_at: "2026-09-26T10:00:00Z",
     duplicate_of: null,
+    open_flags: 0,
     ...extra,
   };
 }

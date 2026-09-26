@@ -14,6 +14,7 @@ const FILES = [
     error: null,
     uploaded_at: "2026-09-26T10:00:00Z",
     duplicate_of: { id: 1, ref_no: "REF-2026-000001", original_name: "inv_0421.pdf" },
+    open_flags: 0,
   },
   {
     id: 1,
@@ -25,6 +26,7 @@ const FILES = [
     error: null,
     uploaded_at: "2026-09-26T09:00:00Z",
     duplicate_of: null,
+    open_flags: 0,
   },
 ];
 
@@ -142,5 +144,42 @@ describe("deleting a file", () => {
     } finally {
       FILES[0]!.status = "pending";
     }
+  });
+});
+
+describe("summary and review actions", () => {
+  it("shows the summary cards, chip counts and a Review button for files needing attention", async () => {
+    const warned = { ...FILES[1]!, status: "parsed", open_flags: 2 };
+    mockApi((url) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/files/summary") {
+        return {
+          body: {
+            total: 7,
+            by_status: { pending: 1, processing: 1, needs_review: 2, flagged: 1, parsed: 2 },
+            with_warnings: 1,
+            needs_attention: 4,
+          },
+        };
+      }
+      if (url.startsWith("/api/files?")) {
+        return { body: { items: [FILES[0], warned], total: 2, page: 1, page_size: 25 } };
+      }
+    });
+    renderAt("/files");
+
+    const summary = await screen.findByRole("region", { name: "Summary" });
+    await waitFor(() => expect(summary.textContent).toContain("Needs review2"));
+    expect(summary.textContent).toContain("1 with checks to look at");
+    expect(summary.textContent).toContain("In progress2");
+    expect(screen.getByRole("button", { name: /Needs review 2/ })).toBeTruthy();
+
+    expect(screen.getByText("2 checks to look at")).toBeTruthy();
+    const review = screen.getByRole("link", { name: "Review inv_0421.pdf" });
+    expect(review.getAttribute("href")).toBe("/review/REF-2026-000001");
+    expect(screen.queryByRole("link", { name: "Review inv_0421_copy.pdf" })).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Error report for inv_0421.pdf" }).getAttribute("href"),
+    ).toBe("/api/files/REF-2026-000001/error-report");
   });
 });

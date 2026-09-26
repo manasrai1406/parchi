@@ -1,13 +1,14 @@
 import { FileCheck2, List, Search, Upload, type LucideIcon } from "lucide-react";
 import { NavLink } from "react-router";
 
-import { useReadiness } from "@/api/queries";
+import { useReadiness, useSummary } from "@/api/queries";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
+// The badge counts files needing attention: needs review, flagged, or with open warnings.
+const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; badge?: boolean }[] = [
   { to: "/upload", label: "Upload", icon: Upload },
-  { to: "/files", label: "Files", icon: List },
-  { to: "/review", label: "Review", icon: FileCheck2 },
+  { to: "/files", label: "Files", icon: List, badge: true },
+  { to: "/review", label: "Review", icon: FileCheck2, badge: true },
   { to: "/query", label: "Query", icon: Search },
 ];
 
@@ -69,11 +70,12 @@ function SystemStatus() {
 }
 
 export function Sidebar() {
+  const attention = useSummary().data?.needs_attention ?? 0;
   return (
     <aside className="flex w-60 shrink-0 flex-col gap-7 border-r border-border bg-sidebar px-4 py-6">
       <Logo />
       <nav aria-label="Main" className="flex flex-col gap-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {NAV_ITEMS.map(({ to, label, icon: Icon, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -88,6 +90,14 @@ export function Sidebar() {
           >
             <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
             <span>{label}</span>
+            {badge && attention > 0 && (
+              <span
+                className="ml-auto rounded-full bg-review-bg px-2 py-0.5 text-xs font-semibold text-review"
+                aria-label={`${attention} need attention`}
+              >
+                {attention}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

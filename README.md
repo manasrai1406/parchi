@@ -4,7 +4,7 @@
 
 Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
-> **Status:** early development. Phases 1–3 of 7 are complete (foundation, upload and registration, library extraction). See the [roadmap](#roadmap).
+> **Status:** early development. Phases 1–4 of 7 are complete (foundation, upload and registration, library extraction, validation and review). See the [roadmap](#roadmap).
 
 ---
 
@@ -47,13 +47,14 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Multi-receipt files: one receipt per sheet, and PDFs split into receipts by content
 - A background worker with automatic recovery and retries
 - Categories: eight built-in ones, plus custom categories you can add, rename and delete
+- Validation: line items and subtotal + tax must match the total (within ₹1), dates must fall in this or last financial year, and repeated receipts are caught; problems are kept as warnings to look at
+- Review page: the original next to what was extracted, every field and line item editable, categories, reject, and "Mark as OK" for warnings
+- Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
 
 **Planned**
 
 - OCR for scanned PDFs and photos
-- Validation: line-item arithmetic, plausible dates, duplicate receipts
-- Review page with side-by-side results, manual editing and error reports
 - Opt-in AI extraction per file or per batch, with a confirmation step and a daily cap
 - Query page with filters and plain-English questions
 
@@ -215,7 +216,8 @@ parchi/
 │   │   ├── extraction/     detectors, Excel/CSV and PDF readers, normalization
 │   │   ├── ingestion/      receive, register, storage, detection, deletion
 │   │   ├── pipeline/       orchestrator, worker jobs, queue, recovery
-│   │   ├── validation/     checks a result must pass
+│   │   ├── review/         saving edits, rejecting, error reports
+│   │   ├── validation/     required fields, arithmetic, dates, duplicates
 │   │   ├── schemas/        API request and response models
 │   │   ├── config.py       settings
 │   │   ├── logging.py      structured logging
@@ -243,9 +245,15 @@ Interactive documentation is available at `/docs` when the API is running. Curre
 | `POST` | `/batches` | Create an upload batch |
 | `POST` | `/batches/{id}/files` | Upload one file into a batch |
 | `GET` | `/batches/{id}` | A batch and the status of its files |
-| `GET` | `/files` | List files: filter by status, search, paginate |
-| `GET` | `/files/{id or ref}` | One file, by id or reference number |
-| `GET` | `/files/{id or ref}/download` | Download the original file |
+| `GET` | `/files` | List files: filter by status, search, the review queue, paginate |
+| `GET` | `/files/summary` | Counts per status for the summary cards and badges |
+| `GET` | `/files/error-reports.zip` | Originals of all files needing attention, plus one PDF report |
+| `GET` | `/files/{id or ref}` | One file, with its receipts, line items, flags and extraction runs |
+| `GET` | `/files/{id or ref}/download` | The original file (`?inline=true` previews PDFs and images) |
+| `GET` | `/files/{id or ref}/error-report` | A PDF of the file's problems and what each reader found |
+| `PUT` | `/files/{id or ref}/receipts` | Save a person's corrections; the file becomes resolved |
+| `POST` | `/files/{id or ref}/reject` | Reject a file (not a receipt, bad scan) |
+| `POST` | `/flags/{id}/resolve` | Mark a warning as looked at and OK |
 | `DELETE` | `/files/{id or ref}` | Delete a file and its extracted data |
 | `GET` | `/categories` | Built-in and custom categories, with usage counts |
 | `POST` | `/categories` | Add a custom category |
@@ -263,8 +271,8 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 | 1. Foundation | Project setup, Docker Compose, settings, logging, database schema, health checks | ✅ Done |
 | 2. Upload and register | Upload, hashing, reference numbers, duplicates, Files page, downloads | ✅ Done |
 | 3. Library extraction | File-type detection, Excel/CSV and digital PDF extractors, background worker | ✅ Done |
-| 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | Next |
-| 5. OCR and images | Scanned PDFs and photos, image preprocessing, HEIC support | Planned |
+| 4. Validation and review | Validation rules, flags, Review page, manual editing, error reports | ✅ Done |
+| 5. OCR and images | Scanned PDFs and photos, image preprocessing, HEIC support | Next |
 | 6. Opt-in AI | Claude and OpenAI adapters, approval enforcement, daily cap, comparison view | Planned |
 | 7. Query and hardening | Filters, plain-English queries, recovery job, integration tests | Planned |
 
