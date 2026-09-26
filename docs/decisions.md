@@ -285,3 +285,28 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   5. Each run records input and output token counts. Logs carry provider, model, tokens, latency and outcome, never receipt content.
 - **Why:** Plan phase 6 and hard rule 1. The token counts make the cost visible.
 - **Changes the data model:** migration `0003` adds `input_tokens`, `output_tokens` and `cached_from_id` to `extraction_runs`.
+
+## D-037 Plain-English questions are read by rules, not AI
+
+- **Date:** 2026-09-26 (Phase 7)
+- **Decision:** `POST /query/ask` turns a question into the same filters the Query page uses, with a built-in rule reader. Nothing is sent to an AI provider. It understands:
+  1. **Periods:** a month ("August", "Aug 2026"; without a year, the latest one that has started), "this/last month", "this/last week", "this/last financial year", "this/last year" (calendar), "in 2026", "today", "yesterday", "last 30 days", and "from/between <date> and/to <date>" with dates like `2026-08-01`, `1/8/2026` or `1 Aug`. With no period, the financial year to date (D-028).
+  2. **Amounts:** "over/above/more than/at least ₹1,000", "under/below/less than/up to 500", "between 500 and 2000", with `k` and `lakh`.
+  3. **Category:** any category name, including custom ones, plus a few words for the built-in ones ("petrol", "diesel" → Fuel; "taxi", "flight", "hotel" → Travel; "lunch", "restaurant" → Food; "electricity", "internet" → Utilities; "stationery" → Office; "repair" → Maintenance). One category per question.
+  4. **Vendor:** a known vendor's full name, or the start of one after "from" or "at" when only one vendor matches.
+  5. **Order:** "top 5", "5 largest" (largest first, only those), "largest/biggest/highest" (largest first).
+  Words it does not understand are listed back to the person. If it understands nothing, it says so and gives examples.
+- **Why:** Chosen by the user. Predictable, free, and nothing leaves the machine. The response shows what was understood and the SQL that ran, so a misreading is visible.
+
+## D-038 Query access is read-only
+
+- **Date:** 2026-09-26 (Phase 7)
+- **Decision:** Migration `0004` adds a `receipt_view` view (receipt, file reference and status, vendor's normalized name, category name, amounts) and a `parchi_reader` role that can `SELECT` from that view and nothing else. The Query endpoints run in a `READ ONLY` transaction, switched to `parchi_reader` with `SET LOCAL ROLE` and a 5-second `statement_timeout`, then rolled back. The app's own user is made a member of the role, so no second password is needed. Only files that are `parsed` or `resolved` are counted; the page says how many files are still waiting for review.
+- **Why:** Plan phase 7. The SQL is built from filters, never from the question's text, but the read-only role means even a bug in that code cannot change or reveal anything else.
+- **Changes the data model:** migration `0004` (a view and a role; no new tables).
+
+## D-039 Query results: pages of 50 and a receipts CSV
+
+- **Date:** 2026-09-26 (Phase 7)
+- **Decision:** The table shows 50 receipts per page, oldest first (or largest first when asked). The totals (count, sum, average) always cover every matching receipt. **Export CSV** has one row per receipt for the current filters, all pages: Date, Vendor, Receipt no., Category, Subtotal, Tax, Total, Reference, File. A cell that starts with `=`, `+`, `-` or `@` is prefixed with `'` so a spreadsheet does not run it as a formula.
+- **Why:** Chosen by the user: paging keeps the page fast with thousands of receipts a month; one row per receipt matches the screen.

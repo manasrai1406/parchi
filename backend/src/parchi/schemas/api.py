@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from parchi.db.enums import AiProvider, FileKind, FileStatus, FlagSeverity, FlagType, RunParser
 from parchi.schemas.receipt import ReceiptSchema
@@ -261,3 +261,82 @@ class AiUsage(BaseModel):
     used_today: int
     remaining: int
     providers: list[AiProviderInfo]
+
+
+# --- Query (D-037 to D-039) ------------------------------------------------------------
+
+QUERY_PAGE_SIZE = 50
+
+
+class ReceiptQuery(BaseModel):
+    """Filters for the Query page. With neither date, the financial year to date (D-028)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    date_from: date | None = None
+    date_to: date | None = None
+    vendor: str | None = Field(default=None, max_length=255, description="A normalized name")
+    category_id: int | None = None
+    min_total: Money | None = Field(default=None, ge=0)
+    max_total: Money | None = Field(default=None, ge=0)
+    sort: Literal["date", "amount"] = Field(
+        default="date", description="date: oldest first; amount: largest first"
+    )
+    limit: int | None = Field(
+        default=None, ge=1, le=500, description="Only the first N, e.g. top 5"
+    )
+    page: int = Field(default=1, ge=1)
+
+    @model_validator(mode="after")
+    def _ranges(self) -> "ReceiptQuery":
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError("From cannot be later than To.")
+        if (
+            self.min_total is not None
+            and self.max_total is not None
+            and self.min_total > self.max_total
+        ):
+            raise ValueError("The minimum amount cannot be more than the maximum.")
+        return self
+
+
+class ReceiptRow(BaseModel):
+    ref_no: str
+    file_ref_no: str
+    receipt_date: date
+    vendor: str
+    receipt_number: str | None
+    category: str | None
+    subtotal: Decimal | None
+    tax: Decimal | None
+    total: Decimal
+
+
+class ReceiptPage(BaseModel):
+    items: list[ReceiptRow]
+    count: int = Field(description="Every matching receipt, not just this page")
+    sum_total: Decimal
+    average_total: Decimal | None
+    page: int
+    page_size: int
+    date_from: date | None
+    date_to: date | None
+    waiting_for_review: int = Field(description="Files not counted until a person reviews them")
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=1, max_length=300)
+
+
+class Understood(BaseModel):
+    label: str
+    value: str
+
+
+class AskOut(BaseModel):
+    question: str
+    understood_as: list[Understood]
+    ignored: list[str] = Field(description="Words the reader did not understand")
+    filters: ReceiptQuery
+    sql: str = Field(description="The query that ran, on read-only access")
+    result: ReceiptPage

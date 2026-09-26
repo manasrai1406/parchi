@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from parchi.api.errors import register_error_handlers
 from parchi.api.middleware import RequestContextMiddleware
-from parchi.api.routes import ai, batches, categories, files, flags, health
+from parchi.api.routes import ai, batches, categories, files, flags, health, query, receipts
 from parchi.config import get_settings
 from parchi.db.session import get_engine
 from parchi.logging import configure_logging, get_logger
@@ -38,6 +38,8 @@ def create_app() -> FastAPI:
     app.include_router(files.router)
     app.include_router(categories.router)
     app.include_router(flags.router)
+    app.include_router(receipts.router)
+    app.include_router(query.router)
     return app
 
 
