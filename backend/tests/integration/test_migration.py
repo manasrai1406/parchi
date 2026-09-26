@@ -219,21 +219,43 @@ def test_ai_run_without_approval_is_rejected(conn: Connection) -> None:
         )
 
 
-def test_ai_run_with_approval_is_recorded(conn: Connection) -> None:
+@pytest.mark.parametrize(
+    ("provider", "model"),
+    [
+        ("anthropic", "claude-sonnet-5"),
+        ("openai", "gpt-6-sol"),
+        ("gemini", "gemini-3.6-flash"),  # D-041, migration 0005
+    ],
+)
+def test_ai_run_with_approval_is_recorded(conn: Connection, provider: str, model: str) -> None:
     file_id = make_file(conn)
     run_id = make_run(
         conn,
         file_id,
         "ai",
-        provider="anthropic",
-        model="claude-sonnet-5",
+        provider=provider,
+        model=model,
         ai_approved_by="local user",
         ai_approved_at="2026-09-26T10:00:00Z",
     )
     row = conn.execute(
         text("SELECT provider, ai_approved_by FROM extraction_runs WHERE id = :id"), {"id": run_id}
     ).one()
-    assert tuple(row) == ("anthropic", "local user")
+    assert tuple(row) == (provider, "local user")
+
+
+def test_an_unknown_ai_provider_is_rejected(conn: Connection) -> None:
+    file_id = make_file(conn)
+    with rejected(conn):
+        make_run(
+            conn,
+            file_id,
+            "ai",
+            provider="mistral",
+            model="m",
+            ai_approved_by="local user",
+            ai_approved_at="2026-09-26T10:00:00Z",
+        )
 
 
 def test_library_run_cannot_carry_ai_fields(conn: Connection) -> None:

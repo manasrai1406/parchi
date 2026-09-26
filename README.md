@@ -2,7 +2,7 @@
 
 **Receipt ingestion, extraction and review — library-first, with AI only when a person approves it.**
 
-Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude or OpenAI) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
+Parchi takes in receipts as PDFs, photos and spreadsheets, extracts them with open-source libraries, validates the results, and stores them in PostgreSQL. A React app lets people upload files, follow their progress, review and fix problems, and query the data. AI extraction (Claude, OpenAI or Gemini) is strictly opt-in: it never runs unless a person approves it, and every approval is recorded.
 
 > **Status:** all seven planned phases are complete (foundation, upload and registration, library extraction, validation and review, OCR, opt-in AI, query and hardening). See the [roadmap](#roadmap).
 
@@ -53,7 +53,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
 
-- Opt-in AI extraction with Claude or OpenAI, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
+- Opt-in AI extraction with Claude, OpenAI or Gemini, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
 - AI results side by side with the library result on the Review page; disagreements are flagged for you to choose
 - Query page: filters for dates (this financial year by default), vendor, category and amount, with the count, total and average, pages of 50, and CSV export
 - Plain-English questions such as "fuel in August" or "top 5 receipts this financial year", read by built-in rules (no AI): the page shows how the question was understood and the SQL that ran, on read-only database access
@@ -73,7 +73,7 @@ flowchart LR
   API --> FS[File storage]
   API --> Q[Job queue on Redis]
   Q --> EX[Library extractors]
-  Q -. only after approval .-> AI[Claude or OpenAI]
+  Q -. only after approval .-> AI[Claude, OpenAI or Gemini]
 ```
 
 The FastAPI backend does all the work; the React app is purely a client of its HTTP API, with TypeScript types generated from the backend's OpenAPI spec. Every extractor returns the same receipt schema, so parsers and providers can be swapped independently.
@@ -87,7 +87,7 @@ Each uploaded file moves through a fixed pipeline: **Receive → Register → De
 | Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic |
 | Data | PostgreSQL 16, Redis 7, ARQ workers |
 | Extraction | pandas, openpyxl, xlrd, pdfplumber, pypdfium2, OpenCV, PaddleOCR |
-| AI (opt-in) | Anthropic and OpenAI SDKs behind one interface |
+| AI (opt-in) | Anthropic, OpenAI and Google Gen AI SDKs behind one interface |
 | Frontend | React, TypeScript, Vite, Tailwind CSS v4, TanStack Query and Table, React Router |
 | Observability | structlog (JSON in production), request ids on every log line |
 | Tooling | uv, ruff, pytest, ESLint, Prettier, Vitest, Docker Compose |
@@ -219,8 +219,8 @@ Settings are read from environment variables (or `.env`). See [`.env.example`](.
 | `LOCAL_USER_NAME` | `local user` | Name recorded on approvals (there is no login in v1) |
 | `AI_ENABLED` | `false` | Master switch for every AI call |
 | `AI_DAILY_CAP` | `50` | Approved AI extractions allowed per day |
-| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | — | Set only for the providers you use |
-| `ANTHROPIC_MODEL`, `OPENAI_MODEL` | `claude-sonnet-5`, `gpt-6-sol` | Models used for approved AI reads |
+| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | — | Set only for the providers you use |
+| `ANTHROPIC_MODEL`, `OPENAI_MODEL`, `GEMINI_MODEL` | `claude-sonnet-5`, `gpt-6-sol`, `gemini-3.6-flash` | Models used for approved AI reads |
 
 Never commit `.env` or anything under `data/`.
 
@@ -230,7 +230,7 @@ AI is off by default and nothing is ever sent without an approval. To use it, ad
 
 ```bash
 AI_ENABLED=true
-ANTHROPIC_API_KEY=sk-ant-...     # and/or OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...     # and/or OPENAI_API_KEY=sk-... or GEMINI_API_KEY=...
 ```
 
 ```bash
@@ -245,7 +245,7 @@ Then choose **Extract with AI…** on a file in review (or select several on the
 parchi/
 ├── backend/
 │   ├── src/parchi/
-│   │   ├── ai/             provider interface, Claude and OpenAI adapters, prompt
+│   │   ├── ai/             provider interface, Claude, OpenAI and Gemini adapters, prompt
 │   │   ├── api/            FastAPI app, middleware, error handling, routes
 │   │   ├── db/             models, enums, sessions, queries
 │   │   ├── extraction/     Excel/CSV, PDF and OCR readers, image cleanup, normalization

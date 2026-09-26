@@ -49,6 +49,7 @@ LIBRARY_PARSERS: tuple[RunParser, ...] = (
 class AiProvider(StrEnum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
+    GEMINI = "gemini"
 
 
 class FlagType(StrEnum):

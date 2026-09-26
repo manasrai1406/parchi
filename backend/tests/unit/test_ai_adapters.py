@@ -11,6 +11,7 @@ import pytest
 
 from parchi.ai.base import AiCallError, AiInput, Approval, ApprovalMissingError
 from parchi.ai.claude import ClaudeProvider
+from parchi.ai.gemini import GeminiProvider
 from parchi.ai.openai_provider import OpenAiProvider
 from parchi.ai.prompt import RECEIPTS_SCHEMA, to_receipts
 from parchi.db.enums import AiProvider, RunParser
@@ -247,3 +248,112 @@ def test_openai_refusal_becomes_an_error() -> None:
     provider, _ = openai_with(openai_response("", refusal=True))
     with pytest.raises(AiCallError, match="declined"):
         asyncio.run(provider.extract(approval(AiProvider.OPENAI), AiInput(filename="a", text="x")))
+
+
+# --- Gemini adapter (mocked client) --------------------------------------------------------
+
+
+class FakeModels:
+    def __init__(self, response: Any = None, error: Exception | None = None) -> None:
+        self.response = response
+        self.error = error
+        self.calls: list[dict[str, Any]] = []
+
+    async def generate_content(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        if self.error:
+            raise self.error
+        return self.response
+
+
+def gemini_response(
+    text: str | None, finish: Any = None, blocked: str | None = None
+) -> SimpleNamespace:
+    from google.genai import types
+
+    return SimpleNamespace(
+        text=text,
+        candidates=[SimpleNamespace(finish_reason=finish or types.FinishReason.STOP)],
+        prompt_feedback=SimpleNamespace(block_reason=blocked) if blocked else None,
+        usage_metadata=SimpleNamespace(prompt_token_count=1800, candidates_token_count=320),
+        response_id="resp_1",
+    )
+
+
+def gemini_with(
+    response: Any = None, error: Exception | None = None
+) -> tuple[GeminiProvider, FakeModels]:
+    provider = GeminiProvider("gm-test", "gemini-3.6-flash", 30)
+    models = FakeModels(response, error)
+    provider._client = SimpleNamespace(aio=SimpleNamespace(models=models))  # type: ignore[assignment]
+    return provider, models
+
+
+def test_gemini_gets_the_file_the_instructions_and_the_schema() -> None:
+    provider, models = gemini_with(gemini_response(json.dumps(ANSWER)))
+    item = AiInput(filename="bill.jpg", image=b"\xff\xd8\xffjpeg", image_type="image/jpeg")
+
+    output = asyncio.run(provider.extract(approval(AiProvider.GEMINI, "gemini-3.6-flash"), item))
+
+    (call,) = models.calls
+    assert call["model"] == "gemini-3.6-flash"
+    image, instructions = call["contents"]
+    assert (image.inline_data.mime_type, image.inline_data.data) == ("image/jpeg", item.image)
+    assert instructions.text
+    config = call["config"]
+    assert config.response_mime_type == "application/json"
+    assert config.response_json_schema == RECEIPTS_SCHEMA
+    assert config.system_instruction
+    assert (output.input_tokens, output.output_tokens, output.request_id) == (1800, 320, "resp_1")
+    assert output.data == ANSWER
+
+
+def test_gemini_gets_a_pdf_inline() -> None:
+    provider, models = gemini_with(gemini_response(json.dumps(ANSWER)))
+    item = AiInput(filename="a.pdf", pdf=b"%PDF-1.4")
+    asyncio.run(provider.extract(approval(AiProvider.GEMINI), item))
+    assert models.calls[0]["contents"][0].inline_data.mime_type == "application/pdf"
+
+
+def _gemini_cases() -> list[Any]:
+    from google.genai import errors, types
+
+    def api(code: int, status: str) -> Exception:
+        return errors.ClientError(code, {"error": {"code": code, "message": "x", "status": status}})
+
+    return [
+        ({"response": gemini_response(None, blocked="SAFETY")}, "declined"),
+        ({"response": gemini_response("", finish=types.FinishReason.SAFETY)}, "declined"),
+        ({"response": gemini_response("{", finish=types.FinishReason.MAX_TOKENS)}, "cut off"),
+        ({"response": gemini_response("not json")}, "not valid JSON"),
+        ({"response": gemini_response(None)}, "no answer"),
+        ({"error": api(403, "PERMISSION_DENIED")}, "API key"),
+        ({"error": api(404, "NOT_FOUND")}, "does not know the model"),
+        ({"error": api(429, "RESOURCE_EXHAUSTED")}, "rate limit"),
+        ({"error": api(400, "INVALID_ARGUMENT")}, "could not accept this file"),
+    ]
+
+
+@pytest.mark.parametrize(("setup", "message"), _gemini_cases())
+def test_gemini_problems_become_readable_errors(setup: dict[str, Any], message: str) -> None:
+    provider, _ = gemini_with(**setup)
+    with pytest.raises(AiCallError, match=message):
+        asyncio.run(provider.extract(approval(AiProvider.GEMINI), AiInput(filename="a", text="x")))
+
+
+def test_gemini_refuses_an_approval_for_another_provider() -> None:
+    provider, models = gemini_with(gemini_response("{}"))
+    with pytest.raises(AiCallError):
+        asyncio.run(provider.extract(approval(AiProvider.OPENAI), AiInput(filename="a", text="x")))
+    assert models.calls == []
+
+
+def test_every_provider_has_a_label_a_model_and_a_key_setting() -> None:
+    from parchi.ai.providers import LABELS, is_configured, model_for
+    from parchi.config import Settings
+
+    settings = Settings(gemini_api_key="gm-test")  # type: ignore[call-arg]
+    assert set(LABELS) == set(AiProvider)
+    assert model_for(AiProvider.GEMINI, settings) == "gemini-3.6-flash"
+    assert is_configured(AiProvider.GEMINI, settings)
+    assert not is_configured(AiProvider.GEMINI, Settings(gemini_api_key=" "))  # type: ignore[call-arg]

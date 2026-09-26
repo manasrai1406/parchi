@@ -13,12 +13,25 @@ from parchi.db.models import ALL_TABLES
 MIGRATION = Path(__file__).parents[2] / "migrations" / "versions" / "0001_initial_schema.py"
 
 
-def load_initial_migration():
-    spec = importlib.util.spec_from_file_location("initial_migration", MIGRATION)
+def _load(path: Path):
+    spec = importlib.util.spec_from_file_location(f"migration_{path.stem}", path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_initial_migration():
+    return _load(MIGRATION)
+
+
+def latest_snapshot(name: str) -> tuple[str, ...]:
+    """A list of allowed values as the newest migration that sets it leaves it."""
+    found = None
+    for path in sorted(MIGRATION.parent.glob("[0-9][0-9][0-9][0-9]_*.py")):
+        found = getattr(_load(path), name, found)
+    assert found is not None, name
+    return tuple(found)
 
 
 def values(enum_cls: type[StrEnum]) -> tuple[str, ...]:
@@ -74,7 +87,7 @@ def test_statuses_and_flag_types_match_decisions() -> None:
 )
 def test_migration_enum_snapshot_matches_code(snapshot: str, enum_cls: type[StrEnum]) -> None:
     """If this fails, an enum changed without a migration that updates its CHECK constraint."""
-    assert getattr(load_initial_migration(), snapshot) == values(enum_cls)
+    assert latest_snapshot(snapshot) == values(enum_cls)
 
 
 def test_library_parsers_snapshot_matches_code() -> None:

@@ -38,7 +38,7 @@ const STEPS = [
   },
   {
     title: "AI only if you approve",
-    text: "Files that fail checks wait in Needs review. Nothing is sent to Claude or OpenAI until you approve it.",
+    text: "Files that fail checks wait in Needs review. Nothing is sent to Claude, OpenAI or Gemini until you approve it.",
   },
 ];
 

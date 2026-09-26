@@ -170,6 +170,13 @@ export function useCreateCategory() {
 export type AiProvider = Schemas["AiExtractIn"]["provider"];
 export type AiUsage = Schemas["AiUsage"];
 
+/** How each provider is named on screen. */
+export const AI_LABELS: Record<AiProvider, string> = {
+  anthropic: "Claude",
+  openai: "OpenAI",
+  gemini: "Gemini",
+};
+
 /** Files the AI approval accepts (D-036): the reader failed, AI failed, or warnings remain. */
 export const AI_ELIGIBLE: readonly FileStatus[] = ["needs_review", "flagged", "parsed"];
 

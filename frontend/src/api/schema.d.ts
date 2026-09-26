@@ -500,7 +500,7 @@ export interface components {
          * AiProvider
          * @enum {string}
          */
-        AiProvider: "anthropic" | "openai";
+        AiProvider: "anthropic" | "openai" | "gemini";
         /** AiProviderInfo */
         AiProviderInfo: {
             provider: components["schemas"]["AiProvider"];

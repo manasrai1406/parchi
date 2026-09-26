@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router";
 import type { Schemas } from "@/api/client";
 import {
   AI_ELIGIBLE,
+  AI_LABELS,
   BUSY,
   downloadUrl,
   useCategories,
@@ -440,7 +441,7 @@ function ReviewForm({ file }: { file: FileDetail }) {
   const library = libraryResults(file);
   const latestAi = aiRun(file);
   const aiLabel = latestAi?.provider
-    ? `${latestAi.provider === "anthropic" ? "Claude" : "OpenAI"}${latestAi.error ? " (failed)" : ""}`
+    ? `${AI_LABELS[latestAi.provider]}${latestAi.error ? " (failed)" : ""}`
     : null;
   const [askingAi, setAskingAi] = useState(false);
   const [current, setCurrent] = useState(0);

@@ -6,7 +6,11 @@ import { cn } from "@/lib/utils";
 
 type Candidate = Pick<FileSummary, "ref_no" | "original_name" | "kind">;
 
-const PROVIDER_COMPANY: Record<AiProvider, string> = { anthropic: "Anthropic", openai: "OpenAI" };
+const PROVIDER_COMPANY: Record<AiProvider, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  gemini: "Google",
+};
 
 function sentAs(file: Candidate): string {
   return file.kind === "excel" || file.kind === "csv" ? "as text" : "as it is";
@@ -47,7 +51,8 @@ export function AiApprovalDialog({
   if (usage && !usage.enabled) {
     blocked = "AI is switched off. Set AI_ENABLED=true in .env to allow approved reads.";
   } else if (usage && configured.length === 0) {
-    blocked = "No AI provider has an API key yet. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env.";
+    blocked =
+      "No AI provider has an API key yet. Add ANTHROPIC_API_KEY, OPENAI_API_KEY or GEMINI_API_KEY to .env.";
   } else if (usage && remaining < count) {
     blocked = `Today's limit allows ${remaining} more AI ${remaining === 1 ? "read" : "reads"}.`;
   }
