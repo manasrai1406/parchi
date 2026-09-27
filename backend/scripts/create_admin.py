@@ -23,7 +23,8 @@ from parchi.schemas.api import UserCreateIn
 
 def read_password(from_stdin: bool) -> str:
     if from_stdin:
-        return sys.stdin.readline().rstrip("\n")
+        # Windows shells may add "\r\n" and a byte-order mark when piping.
+        return sys.stdin.readline().lstrip("﻿").rstrip("\r\n")
     first = getpass.getpass("Temporary password (10 to 128 characters): ")
     if getpass.getpass("Again: ") != first:
         raise SystemExit("The two passwords do not match.")
