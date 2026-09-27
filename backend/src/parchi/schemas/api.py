@@ -7,7 +7,15 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from parchi.db.enums import AiProvider, FileKind, FileStatus, FlagSeverity, FlagType, RunParser
+from parchi.db.enums import (
+    AiProvider,
+    FileKind,
+    FileStatus,
+    FlagSeverity,
+    FlagType,
+    RunParser,
+    UserRole,
+)
 from parchi.schemas.receipt import ReceiptSchema
 
 
@@ -340,3 +348,85 @@ class AskOut(BaseModel):
     filters: ReceiptQuery
     sql: str = Field(description="The query that ran, on read-only access")
     result: ReceiptPage
+
+
+# --- Login and users (D-043 to D-045) ----------------------------------------------------
+
+PASSWORD_MIN, PASSWORD_MAX = 10, 128
+Password = Annotated[str, Field(min_length=PASSWORD_MIN, max_length=PASSWORD_MAX)]
+Username = Annotated[str, Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9._-]{3,50}$")]
+DisplayName = Annotated[str, Field(min_length=1, max_length=100)]
+
+
+def _tidy_name(value: str) -> str:
+    value = " ".join(value.split())
+    if not value:
+        raise ValueError("The name is required.")
+    return value
+
+
+class LoginIn(BaseModel):
+    username: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX)
+
+
+class MeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    display_name: str
+    role: UserRole
+    must_change_password: bool
+
+
+class PasswordChangeIn(BaseModel):
+    current_password: str = Field(min_length=1, max_length=PASSWORD_MAX)
+    new_password: Password
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    display_name: str
+    role: UserRole
+    active: bool
+    must_change_password: bool
+    last_login_at: datetime | None
+    created_at: datetime
+
+
+class UserCreateIn(BaseModel):
+    username: Username
+    display_name: DisplayName
+    role: UserRole
+    temporary_password: Password
+
+    @field_validator("username")
+    @classmethod
+    def _lower(cls, value: str) -> str:
+        return value.lower()
+
+    @field_validator("display_name")
+    @classmethod
+    def _name(cls, value: str) -> str:
+        return _tidy_name(value)
+
+
+class UserUpdateIn(BaseModel):
+    """Only the fields sent are changed."""
+
+    display_name: DisplayName | None = None
+    role: UserRole | None = None
+    active: bool | None = None
+
+    @field_validator("display_name")
+    @classmethod
+    def _name(cls, value: str | None) -> str | None:
+        return None if value is None else _tidy_name(value)
+
+
+class PasswordResetIn(BaseModel):
+    temporary_password: Password

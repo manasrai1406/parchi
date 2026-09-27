@@ -187,7 +187,7 @@ def test_an_approved_run_records_who_approved_it_before_anything_is_sent(
     assert (row.provider, row.model, row.ai_approved_by) == (
         "anthropic",
         "claude-sonnet-5",
-        "local user",
+        "admin",
     )
     assert row.ai_approved_at is not None and row.finished_at is None
     assert fake.calls == []  # approving sends nothing; the worker does, later

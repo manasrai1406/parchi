@@ -3,11 +3,23 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from parchi.api.errors import register_error_handlers
 from parchi.api.middleware import RequestContextMiddleware
-from parchi.api.routes import ai, batches, categories, files, flags, health, query, receipts
+from parchi.api.routes import (
+    ai,
+    auth,
+    batches,
+    categories,
+    files,
+    flags,
+    health,
+    query,
+    receipts,
+    users,
+)
+from parchi.auth.deps import require_viewer
 from parchi.config import get_settings
 from parchi.db.session import get_engine
 from parchi.logging import configure_logging, get_logger
@@ -31,15 +43,20 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Parchi", version="0.1.0", lifespan=lifespan)
     app.add_middleware(RequestContextMiddleware)
     register_error_handlers(app)
+    # Open: health checks. Login and user management carry their own checks.
     app.include_router(health.router)
-    app.include_router(batches.router)
+    app.include_router(auth.router)
+    app.include_router(users.router)
+    # Everything else needs a logged-in user; routes that change data ask for more (D-044).
+    logged_in = [Depends(require_viewer)]
+    app.include_router(batches.router, dependencies=logged_in)
     # Before files: /files/ai-extract must not be read as a file key.
-    app.include_router(ai.router)
-    app.include_router(files.router)
-    app.include_router(categories.router)
-    app.include_router(flags.router)
-    app.include_router(receipts.router)
-    app.include_router(query.router)
+    app.include_router(ai.router, dependencies=logged_in)
+    app.include_router(files.router, dependencies=logged_in)
+    app.include_router(categories.router, dependencies=logged_in)
+    app.include_router(flags.router, dependencies=logged_in)
+    app.include_router(receipts.router, dependencies=logged_in)
+    app.include_router(query.router, dependencies=logged_in)
     return app
 
 

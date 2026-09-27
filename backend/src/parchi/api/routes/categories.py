@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from parchi.api.deps import SessionDep
 from parchi.api.errors import AppError, ErrorResponse
+from parchi.auth.deps import Reviewer
 from parchi.db.models import Category, Receipt, Vendor
 from parchi.logging import get_logger
 from parchi.schemas.api import CategoryIn, CategoryOut
@@ -83,7 +84,7 @@ async def list_categories(session: SessionDep) -> list[CategoryOut]:
 
 
 @router.post("", status_code=http_status.HTTP_201_CREATED, responses=ERRORS)
-async def create_category(body: CategoryIn, session: SessionDep) -> CategoryOut:
+async def create_category(body: CategoryIn, session: SessionDep, _: Reviewer) -> CategoryOut:
     if await _name_taken(session, body.name):
         raise _exists(body.name)
     category = Category(name=body.name)
@@ -97,7 +98,9 @@ async def create_category(body: CategoryIn, session: SessionDep) -> CategoryOut:
 
 
 @router.patch("/{category_id}", responses=ERRORS)
-async def rename_category(category_id: int, body: CategoryIn, session: SessionDep) -> CategoryOut:
+async def rename_category(
+    category_id: int, body: CategoryIn, session: SessionDep, _: Reviewer
+) -> CategoryOut:
     category = await _get(session, category_id)
     if category.builtin:
         raise AppError(409, "builtin_category", "Built-in categories cannot be renamed.")
@@ -113,7 +116,7 @@ async def rename_category(category_id: int, body: CategoryIn, session: SessionDe
 
 
 @router.delete("/{category_id}", status_code=http_status.HTTP_204_NO_CONTENT, responses=ERRORS)
-async def delete_category(category_id: int, session: SessionDep) -> Response:
+async def delete_category(category_id: int, session: SessionDep, _: Reviewer) -> Response:
     """Only custom categories that no receipt or vendor uses."""
     category = await _get(session, category_id)
     if category.builtin:

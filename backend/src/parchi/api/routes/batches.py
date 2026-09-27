@@ -9,6 +9,7 @@ from starlette.concurrency import run_in_threadpool
 
 from parchi.api.deps import SessionDep, SettingsDep, StorageDep
 from parchi.api.errors import AppError, ErrorResponse
+from parchi.auth.deps import Reviewer
 from parchi.db.models import File, UploadBatch
 from parchi.db.repositories import get_file
 from parchi.ingestion.names import (
@@ -44,7 +45,7 @@ MULTIPART_OVERHEAD_BYTES = 64 * 1024
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_batch(session: SessionDep) -> BatchOut:
+async def create_batch(session: SessionDep, _: Reviewer) -> BatchOut:
     async with session.begin():
         batch = UploadBatch()
         session.add(batch)
@@ -88,6 +89,7 @@ async def upload_file(
     session: SessionDep,
     settings: SettingsDep,
     storage: StorageDep,
+    _: Reviewer,
     confirm_duplicate: Annotated[bool, Form()] = False,
 ) -> UploadResult:
     """Register one file. An identical file is not saved unless confirm_duplicate is true."""

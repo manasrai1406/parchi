@@ -54,10 +54,11 @@ def test_log_level_is_checked() -> None:
         make(log_level="loud")
 
 
-def test_local_user_name_is_required() -> None:
-    assert make().local_user_name == "local user"
+def test_session_cookie_defaults() -> None:
+    settings = make()
+    assert (settings.cookie_secure, settings.session_days) == (False, 7)
     with pytest.raises(ValidationError):
-        make(local_user_name="")
+        make(session_days=0)
 
 
 def test_json_logs_only_in_production() -> None:

@@ -126,9 +126,41 @@ def api(engine: Engine, migrated: str, storage_dir: str, monkeypatch: pytest.Mon
     # Date checks use "today"; pin it so the samples' dates never age out.
     monkeypatch.setattr("parchi.validation.rules.current_date", lambda: TODAY)
 
+    make_users(engine)
+
     # psycopg's async mode cannot run on Windows' default Proactor event loop.
     options = {"loop_factory": asyncio.SelectorEventLoop} if sys.platform == "win32" else {}
     with TestClient(create_app(), backend_options=options) as client:
         client.queued = queued  # type: ignore[attr-defined]
+        # Tests act as an admin unless they log in as someone else (D-044).
+        log_in(client, "admin")
         yield client
     _clear_app_caches()
+
+
+# One account per role, with passwords already chosen (D-043 to D-045).
+PASSWORD = "correct horse battery"
+USERS = {"admin": "admin", "reviewer": "reviewer", "viewer": "viewer"}
+
+
+def make_users(engine: Engine) -> None:
+    from parchi.auth.passwords import hash_password
+
+    password_hash = hash_password(PASSWORD)
+    with engine.begin() as connection:
+        for username, role in USERS.items():
+            connection.execute(
+                text(
+                    "INSERT INTO users (username, display_name, password_hash, role, "
+                    "must_change_password) VALUES (:u, :d, :h, :r, false)"
+                ),
+                {"u": username, "d": username.capitalize(), "h": password_hash, "r": role},
+            )
+
+
+def log_in(client, username: str, password: str = PASSWORD):
+    """Log the TestClient in; its cookie jar keeps the session."""
+    client.cookies.clear()
+    response = client.post("/auth/login", json={"username": username, "password": password})
+    assert response.status_code == 200, response.text
+    return response

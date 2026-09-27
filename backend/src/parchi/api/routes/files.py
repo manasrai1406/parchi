@@ -13,8 +13,9 @@ from sqlalchemy import select
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 
-from parchi.api.deps import SessionDep, SettingsDep, StorageDep
+from parchi.api.deps import SessionDep, StorageDep
 from parchi.api.errors import AppError, ErrorResponse
+from parchi.auth.deps import Admin, Reviewer
 from parchi.db.enums import FileStatus
 from parchi.db.models import File
 from parchi.db.repositories import (
@@ -201,7 +202,7 @@ async def error_report(file_key: str, session: SessionDep) -> Response:
 
 @router.put("/{file_key}/receipts", responses=ERRORS)
 async def save_receipts(
-    file_key: str, body: ManualEdit, session: SessionDep, settings: SettingsDep
+    file_key: str, body: ManualEdit, session: SessionDep, user: Reviewer
 ) -> FileDetail:
     """Save a person's edits as the accepted result; the file becomes resolved (D-030)."""
     file = await _require_file(session, file_key)
@@ -212,7 +213,7 @@ async def save_receipts(
             session,
             file_id,
             body.receipts,
-            user=settings.local_user_name,
+            user=user.username,
             today=rules.current_date(),
         )
     except FileNotFoundInDbError as exc:
@@ -225,15 +226,13 @@ async def save_receipts(
 
 
 @router.post("/{file_key}/reject", responses=ERRORS)
-async def reject(
-    file_key: str, body: RejectIn, session: SessionDep, settings: SettingsDep
-) -> FileDetail:
+async def reject(file_key: str, body: RejectIn, session: SessionDep, user: Reviewer) -> FileDetail:
     """Not a receipt, or a bad scan (D-030 item 4)."""
     file = await _require_file(session, file_key)
     file_id = file.id
     await session.rollback()
     try:
-        await reject_file(session, file_id, body.reason, user=settings.local_user_name)
+        await reject_file(session, file_id, body.reason, user=user.username)
     except FileNotFoundInDbError as exc:
         raise AppError(404, "file_not_found", "File not found.") from exc
     except FileBusyError as exc:
@@ -246,7 +245,9 @@ async def reject(
     status_code=http_status.HTTP_204_NO_CONTENT,
     responses={**NOT_FOUND, 409: {"model": ErrorResponse}},
 )
-async def remove_file(file_key: str, session: SessionDep, storage: StorageDep) -> Response:
+async def remove_file(
+    file_key: str, session: SessionDep, storage: StorageDep, _: Admin
+) -> Response:
     """Delete a file with its runs, receipts and flags (D-019). Not while it is processing."""
     file = await _require_file(session, file_key)
     file_id = file.id

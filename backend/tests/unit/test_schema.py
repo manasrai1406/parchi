@@ -83,6 +83,7 @@ def test_statuses_and_flag_types_match_decisions() -> None:
         ("AI_PROVIDERS", enums.AiProvider),
         ("FLAG_TYPES", enums.FlagType),
         ("FLAG_SEVERITIES", enums.FlagSeverity),
+        ("USER_ROLES", enums.UserRole),
     ],
 )
 def test_migration_enum_snapshot_matches_code(snapshot: str, enum_cls: type[StrEnum]) -> None:
@@ -95,8 +96,10 @@ def test_library_parsers_snapshot_matches_code() -> None:
 
 
 def test_migrations_create_every_table() -> None:
-    # 0001 created the original seven; 0002 added categories (D-026).
-    assert set(load_initial_migration().TABLES) | {"categories"} == set(ALL_TABLES)
+    # 0001 created the original seven; 0002 added categories (D-026); 0006 users and
+    # sessions (D-043).
+    later = {"categories", "users", "sessions"}
+    assert set(load_initial_migration().TABLES) | later == set(ALL_TABLES)
 
 
 def test_the_categories_migration_seeds_the_builtin_list() -> None:

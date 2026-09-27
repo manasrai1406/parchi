@@ -25,6 +25,7 @@ dependencies = [
     "anthropic>=1.8.0",
     "openai>=3.19.2",
     "google-genai>=2.25.0",
+    "argon2-cffi>=25.1.0",
 ]
 
 [project.optional-dependencies]

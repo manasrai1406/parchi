@@ -74,7 +74,11 @@ async def used_today(session: AsyncSession, settings: Settings) -> int:
 
 
 async def approve(
-    session: AsyncSession, file_ids: list[int], provider: AiProvider, settings: Settings
+    session: AsyncSession,
+    file_ids: list[int],
+    provider: AiProvider,
+    settings: Settings,
+    approved_by: str,
 ) -> list[int]:
     """Record the approval on a new AI run per file, and mark the files ai_processing.
     Returns the run ids to queue. All or nothing: one ineligible file stops the batch."""
@@ -99,7 +103,7 @@ async def approve(
                 parser=RunParser.AI,
                 provider=provider,
                 model=providers.model_for(provider, settings),
-                ai_approved_by=settings.local_user_name,
+                ai_approved_by=approved_by,
                 ai_approved_at=now,
             )
             session.add(run)
@@ -362,7 +366,7 @@ async def _decide(
     await session.execute(
         update(Flag)
         .where(Flag.file_id == file.id, Flag.resolved.is_(False))
-        .values(resolved=True, resolved_by=settings.local_user_name, resolved_at=text("now()"))
+        .values(resolved=True, resolved_by=run.ai_approved_by, resolved_at=text("now()"))
     )
     problems_now = await rules.check_receipts(
         session, result.receipts, file.id, rules.current_date()

@@ -14,7 +14,7 @@ from parchi.db.models import File, Receipt, Vendor
 from parchi.query import filters
 from parchi.query.readonly import reader_session
 from parchi.schemas.api import QUERY_PAGE_SIZE, ReceiptPage, ReceiptQuery
-from parchi.validation.rules import current_date
+from parchi.validation import rules
 
 router = APIRouter(tags=["query"])
 
@@ -51,7 +51,7 @@ async def list_receipts(
     query: Annotated[ReceiptQuery, Query()], session: SessionDep
 ) -> ReceiptPage:
     """Receipts from parsed and resolved files. With no dates, the financial year to date."""
-    return await receipt_page(session, filters.with_default_dates(query, current_date()))
+    return await receipt_page(session, filters.with_default_dates(query, rules.current_date()))
 
 
 @router.get(
@@ -61,7 +61,7 @@ async def list_receipts(
 )
 async def export_receipts(query: Annotated[ReceiptQuery, Query()]) -> StreamingResponse:
     """Every matching receipt, one row each, whatever the page (D-039)."""
-    query = filters.with_default_dates(query, current_date())
+    query = filters.with_default_dates(query, rules.current_date())
     name = f"receipts_{query.date_from or 'start'}_to_{query.date_to or 'today'}.csv"
     return StreamingResponse(
         filters.csv_chunks(query),

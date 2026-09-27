@@ -330,3 +330,26 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** HEIC support is dropped from the plan (user's choice). HEIC files are still accepted at upload and go to `needs_review` with a note to convert them to JPG or PNG (D-032 item 4); they are never read, and they are not sent to AI providers (D-035).
 - **Why:** Chosen by the user. It would need a new dependency for one phone format that is easy to convert.
 - **Changes:** The plan's "convert HEIC" step for images (PLAN.md, phase 5).
+
+## D-043 Login with username and password
+
+- **Date:** 2026-09-28 (after Phase 7; "Login and user roles" from Left for later)
+- **Decision:** People log in with a username and password stored in Parchi's database (user's choice). Passwords are hashed with Argon2id through the new `argon2-cffi` dependency (user-approved), 10 to 128 characters. A successful login creates a server-side session: a random token in an httpOnly, `SameSite=Strict` cookie (`Secure` when `COOKIE_SECURE=true`, for HTTPS), and only its SHA-256 in the `sessions` table. Sessions last 7 days and are extended while in use; logout, deactivation and a password change end them. Five wrong passwords in a row lock the account for 15 minutes. Every endpoint except `/health` needs a logged-in user. Logs carry the user id, never passwords or tokens.
+- **Why:** Chosen by the user: works offline and needs no outside service. `SameSite=Strict` cookies stop other sites from making requests as a logged-in user.
+- **Changes:** D-001. `LOCAL_USER_NAME` is removed; approvals, resolutions and rejections are signed with the logged-in user's username (records signed "local user" stay as they are). Migration `0006` adds `users` and `sessions`.
+
+## D-044 Roles: admin, reviewer, viewer
+
+- **Date:** 2026-09-28
+- **Decision:** Three roles (user's choice), each including the one below it, checked on the server for every endpoint:
+  - **Viewer:** see files, receipts, reports and downloads; use the Query page, questions and CSV export.
+  - **Reviewer:** also upload, fix and resolve receipts, reject files, mark warnings as OK, add, rename and delete categories, and approve AI reads.
+  - **Admin:** also delete files and manage users.
+  The interface hides what a role cannot do. A test checks that every route has a role, and that no route that changes data is open to viewers.
+- **Why:** Chosen by the user.
+
+## D-045 Accounts are created by an admin
+
+- **Date:** 2026-09-28
+- **Decision:** There is no public sign-up (user's choice). The first admin is made with `python scripts/create_admin.py`. Admins add users with a temporary password, change roles, deactivate and reactivate accounts, and reset forgotten passwords; a new or reset password must be changed at the next login. Usernames (3 to 50 of `a-z 0-9 . _ -`, stored in lower case) never change; display names can. An admin cannot demote or deactivate themselves, so there is always at least one active admin.
+- **Why:** Chosen by the user: no email service is needed.

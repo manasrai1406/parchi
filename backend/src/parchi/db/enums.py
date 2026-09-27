@@ -66,6 +66,14 @@ class FlagSeverity(StrEnum):
     ERROR = "error"
 
 
+class UserRole(StrEnum):
+    """Each role can do everything the one before it can (D-044)."""
+
+    VIEWER = "viewer"
+    REVIEWER = "reviewer"
+    ADMIN = "admin"
+
+
 # The categories every installation starts with (D-009). They live in the categories
 # table, where people can add their own (D-026); built-in ones cannot be removed.
 BUILTIN_CATEGORIES: tuple[str, ...] = (

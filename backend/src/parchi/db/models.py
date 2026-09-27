@@ -17,6 +17,7 @@ from parchi.db.enums import (
     FlagSeverity,
     FlagType,
     RunParser,
+    UserRole,
 )
 
 # One global counter for file reference numbers. It never resets (D-013).
@@ -315,6 +316,51 @@ File.open_flags = column_property(
     .scalar_subquery()
 )
 
+USERNAME_PATTERN = r"^[a-z0-9._-]{3,50}$"
+
+
+class User(IdMixin, TimestampMixin, Base):
+    """A person who can log in (D-043 to D-045). Usernames never change."""
+
+    __tablename__ = "users"
+    __table_args__ = (
+        sa.CheckConstraint(f"username ~ '{USERNAME_PATTERN}'", name="username_format"),
+        sa.CheckConstraint(
+            "display_name <> '' AND display_name = btrim(display_name)", name="display_name_clean"
+        ),
+        sa.CheckConstraint("failed_logins >= 0", name="failed_logins_positive"),
+    )
+
+    username: Mapped[str] = mapped_column(sa.String(50), unique=True)
+    display_name: Mapped[str] = mapped_column(sa.String(100))
+    password_hash: Mapped[str] = mapped_column(sa.String(255))
+    role: Mapped[UserRole] = mapped_column(enum_type(UserRole, "role"))
+    active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true())
+    # Set for a new or reset password: it must be changed at the next login.
+    must_change_password: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true())
+    failed_logins: Mapped[int] = mapped_column(sa.SmallInteger, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    last_login_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True))
+
+
+class UserSession(TimestampMixin, Base):
+    """A logged-in browser. Only the token's SHA-256 is stored (D-043)."""
+
+    __tablename__ = "sessions"
+    __table_args__ = (
+        sa.CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="token_hash_format"),
+    )
+
+    token_hash: Mapped[str] = mapped_column(sa.String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sa.ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.func.now()
+    )
+
+    user: Mapped[User] = relationship(lazy="raise")
+
+
 ALL_TABLES = [
     table.name
     for table in (
@@ -326,5 +372,7 @@ ALL_TABLES = [
         Receipt.__table__,
         LineItem.__table__,
         Flag.__table__,
+        User.__table__,
+        UserSession.__table__,
     )
 ]

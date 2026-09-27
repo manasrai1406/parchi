@@ -5,6 +5,7 @@ from fastapi import APIRouter, status
 from parchi.ai import providers
 from parchi.api.deps import SessionDep, SettingsDep
 from parchi.api.errors import AppError, ErrorResponse
+from parchi.auth.deps import CurrentUser, Reviewer
 from parchi.db.enums import AiProvider
 from parchi.db.repositories import get_file
 from parchi.pipeline import ai
@@ -30,7 +31,11 @@ REFUSALS = {
 
 
 async def _approve(
-    keys: list[str], body: AiExtractIn, session: SessionDep, settings: SettingsDep
+    keys: list[str],
+    body: AiExtractIn,
+    session: SessionDep,
+    settings: SettingsDep,
+    user: CurrentUser,
 ) -> AiRunsOut:
     files = []
     for key in dict.fromkeys(keys):  # a file named twice is approved once
@@ -42,7 +47,7 @@ async def _approve(
     await session.rollback()
     label = providers.LABELS[body.provider]
     try:
-        run_ids = await ai.approve(session, list(refs), body.provider, settings)
+        run_ids = await ai.approve(session, list(refs), body.provider, settings, user.username)
     except ai.AiDisabledError as exc:
         raise AppError(
             403, "ai_disabled", "AI is switched off. Set AI_ENABLED=true to allow approved reads."
@@ -73,20 +78,20 @@ async def _approve(
 
 @router.post("/files/ai-extract", status_code=status.HTTP_202_ACCEPTED, responses=REFUSALS)
 async def ai_extract_batch(
-    body: AiBatchIn, session: SessionDep, settings: SettingsDep
+    body: AiBatchIn, session: SessionDep, settings: SettingsDep, user: Reviewer
 ) -> AiRunsOut:
     """Approve several files for an AI read. All or nothing."""
-    return await _approve(body.files, body, session, settings)
+    return await _approve(body.files, body, session, settings, user)
 
 
 @router.post(
     "/files/{file_key}/ai-extract", status_code=status.HTTP_202_ACCEPTED, responses=REFUSALS
 )
 async def ai_extract(
-    file_key: str, body: AiExtractIn, session: SessionDep, settings: SettingsDep
+    file_key: str, body: AiExtractIn, session: SessionDep, settings: SettingsDep, user: Reviewer
 ) -> AiRunsOut:
     """Approve one file for an AI read. The approval is recorded before anything is sent."""
-    return await _approve([file_key], body, session, settings)
+    return await _approve([file_key], body, session, settings, user)
 
 
 @router.get("/ai/usage")

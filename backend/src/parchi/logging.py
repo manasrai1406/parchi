@@ -17,7 +17,8 @@ from structlog.typing import EventDict, WrappedLogger
 from parchi.config import Settings
 
 # The only keys that may be bound to the logging context.
-CONTEXT_KEYS = frozenset({"request_id", "batch_id", "file_id", "run_id", "ref_no"})
+# user_id: who made the request (D-043); never a username, password or token.
+CONTEXT_KEYS = frozenset({"request_id", "user_id", "batch_id", "file_id", "run_id", "ref_no"})
 
 # Keys whose values are never written, whatever the caller passes.
 SENSITIVE_KEYS = frozenset(
@@ -117,7 +118,7 @@ def configure_logging(settings: Settings) -> None:
 
 
 def bind_context(**ids: object) -> None:
-    """Bind ids (request_id, batch_id, file_id, run_id, ref_no) to every later log line."""
+    """Bind ids (request_id, user_id, batch_id, file_id, run_id, ref_no) to later log lines."""
     unknown = set(ids) - CONTEXT_KEYS
     if unknown:
         raise ValueError(f"Not a logging context key: {', '.join(sorted(unknown))}")

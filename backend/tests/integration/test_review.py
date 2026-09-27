@@ -178,7 +178,7 @@ def test_saving_resolves_the_warnings_the_person_has_seen(
 
     assert fixed["status"] == "resolved"
     assert fixed["open_flags"] == 0
-    assert all(flag["resolved_by"] == "local user" for flag in fixed["flags"])
+    assert all(flag["resolved_by"] == "admin" for flag in fixed["flags"])
 
 
 def test_editing_twice_replaces_the_receipts_and_keeps_the_history(
@@ -257,7 +257,7 @@ def test_marking_a_warning_as_ok(api: TestClient, storage_dir: str) -> None:
 
     response = api.post(f"/flags/{flag['id']}/resolve")
     assert response.status_code == 200
-    assert (response.json()["resolved"], response.json()["resolved_by"]) == (True, "local user")
+    assert (response.json()["resolved"], response.json()["resolved_by"]) == (True, "admin")
 
     after = api.get(f"/files/{detail['id']}").json()
     assert (after["status"], after["open_flags"]) == ("parsed", 0)

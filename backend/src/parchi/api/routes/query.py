@@ -11,7 +11,7 @@ from parchi.logging import get_logger
 from parchi.query import filters
 from parchi.query.ask import NotUnderstood, read_question
 from parchi.schemas.api import AskIn, AskOut
-from parchi.validation.rules import current_date
+from parchi.validation import rules
 
 router = APIRouter(prefix="/query", tags=["query"])
 log = get_logger(__name__)
@@ -28,7 +28,7 @@ async def ask(body: AskIn, session: SessionDep) -> AskOut:
     vendors = await list_vendors(session)
     try:
         reading = read_question(
-            body.question, today=current_date(), categories=categories, vendors=vendors
+            body.question, today=rules.current_date(), categories=categories, vendors=vendors
         )
     except NotUnderstood as exc:
         log.info("query.not_understood")

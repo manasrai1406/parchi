@@ -41,8 +41,10 @@ class Settings(BaseSettings):
     log_level: str = "info"
     log_dir: Path | None = Path("logs")
 
-    # There is no login in v1: approvals and resolutions are signed with this name (D-001).
-    local_user_name: str = Field(default="local user", min_length=1, max_length=100)
+    # Login sessions (D-043). Set COOKIE_SECURE=true when Parchi is served over HTTPS, so
+    # the browser only sends the session cookie over encrypted connections.
+    cookie_secure: bool = False
+    session_days: int = Field(default=7, ge=1, le=90)
 
     # AI is off unless explicitly enabled, and even then every call needs approval.
     ai_enabled: bool = False

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, text
+from tests.integration.conftest import log_in
 
 pytestmark = pytest.mark.db
 
@@ -137,6 +138,7 @@ def test_simultaneous_identical_uploads_save_only_one(
 
         options = {"loop_factory": asyncio.SelectorEventLoop} if sys.platform == "win32" else {}
         with TestClient(create_app(), backend_options=options) as client:
+            log_in(client, "reviewer")
             barrier.wait()
             results.append(upload(client, batch_id, data=b"same bytes" * 1000).json())
 
