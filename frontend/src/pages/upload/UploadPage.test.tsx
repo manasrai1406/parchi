@@ -31,7 +31,7 @@ function pdf(name: string) {
 }
 
 async function drop(...files: File[]) {
-  const input = screen.getByLabelText("Choose files to upload");
+  const input = await screen.findByLabelText("Choose files to upload");
   fireEvent.change(input, { target: { files } });
 }
 

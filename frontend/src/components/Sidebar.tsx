@@ -1,18 +1,21 @@
-import { FileCheck2, List, Search, Upload, type LucideIcon } from "lucide-react";
-import { NavLink } from "react-router";
+import { FileCheck2, List, LogOut, Search, Upload, Users, type LucideIcon } from "lucide-react";
+import { Link, NavLink } from "react-router";
 
 import { useAiUsage, useReadiness, useSummary } from "@/api/queries";
+import { can, ROLE_LABELS, useCurrentUser, useLogout, type Role } from "@/auth/session";
 import { cn } from "@/lib/utils";
 
 // The badge counts files needing attention: needs review, flagged, or with open warnings.
-const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; badge?: boolean }[] = [
-  { to: "/upload", label: "Upload", icon: Upload },
-  { to: "/files", label: "Files", icon: List, badge: true },
-  { to: "/review", label: "Review", icon: FileCheck2, badge: true },
-  { to: "/query", label: "Query", icon: Search },
+// Each item shows only to roles that can use it (D-044).
+const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; badge?: boolean; role: Role }[] = [
+  { to: "/upload", label: "Upload", icon: Upload, role: "reviewer" },
+  { to: "/files", label: "Files", icon: List, badge: true, role: "viewer" },
+  { to: "/review", label: "Review", icon: FileCheck2, badge: true, role: "viewer" },
+  { to: "/query", label: "Query", icon: Search, role: "viewer" },
+  { to: "/users", label: "Users", icon: Users, role: "admin" },
 ];
 
-function Logo() {
+export function Logo() {
   return (
     <div className="flex items-center gap-3 px-2">
       <div className="flex size-[34px] items-center justify-center rounded-[10px] bg-accent text-on-accent">
@@ -97,41 +100,77 @@ function AiUsageCard() {
   );
 }
 
+/** Who is logged in, with their role, and the way out. */
+function UserCard() {
+  const user = useCurrentUser();
+  const logout = useLogout();
+  if (!user) return null;
+  return (
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-3.5">
+      <span className="truncate text-[15px] font-semibold">{user.display_name}</span>
+      <span className="text-xs text-muted">
+        <span className="font-mono">{user.username}</span> · {ROLE_LABELS[user.role]}
+      </span>
+      <div className="mt-1 flex items-center justify-between">
+        <Link
+          to="/change-password"
+          className="inline-flex min-h-9 items-center text-xs text-accent-text"
+        >
+          Change password
+        </Link>
+        <button
+          type="button"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+          className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-text"
+        >
+          <LogOut size={14} aria-hidden="true" />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar() {
+  const user = useCurrentUser();
   const attention = useSummary().data?.needs_attention ?? 0;
   return (
     <aside className="flex w-60 shrink-0 flex-col gap-7 border-r border-border bg-sidebar px-4 py-6">
       <Logo />
       <nav aria-label="Main" className="flex flex-col gap-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, badge }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                "flex h-11 items-center gap-3 rounded-[10px] px-3 text-[15px]",
-                isActive
-                  ? "bg-accent-soft font-semibold text-accent-text"
-                  : "font-medium text-nav hover:bg-card",
-              )
-            }
-          >
-            <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
-            <span>{label}</span>
-            {badge && attention > 0 && (
-              <span
-                className="ml-auto rounded-full bg-review-bg px-2 py-0.5 text-xs font-semibold text-review"
-                aria-label={`${attention} need attention`}
-              >
-                {attention}
-              </span>
-            )}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.filter((item) => can(user, item.role)).map(
+          ({ to, label, icon: Icon, badge }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  "flex h-11 items-center gap-3 rounded-[10px] px-3 text-[15px]",
+                  isActive
+                    ? "bg-accent-soft font-semibold text-accent-text"
+                    : "font-medium text-nav hover:bg-card",
+                )
+              }
+            >
+              <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
+              <span>{label}</span>
+              {badge && attention > 0 && (
+                <span
+                  className="ml-auto rounded-full bg-review-bg px-2 py-0.5 text-xs font-semibold text-review"
+                  aria-label={`${attention} need attention`}
+                >
+                  {attention}
+                </span>
+              )}
+            </NavLink>
+          ),
+        )}
       </nav>
       <div className="mt-auto flex flex-col gap-3">
         <AiUsageCard />
         <SystemStatus />
+        <UserCard />
       </div>
     </aside>
   );

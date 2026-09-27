@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { Link } from "react-router";
 
 import { IN_PROGRESS, useBatches, type FileSummary } from "@/api/queries";
+import { can, useCurrentUser } from "@/auth/session";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatBytes } from "@/lib/format";
@@ -190,6 +191,20 @@ function UploadRow({
 }
 
 export function UploadPage() {
+  if (!can(useCurrentUser(), "reviewer")) {
+    return (
+      <>
+        <PageHeader eyebrow="New batch" title="Upload receipts" />
+        <p className="text-muted">
+          Your role can look at receipts but not upload them. Ask an admin.
+        </p>
+      </>
+    );
+  }
+  return <Uploader />;
+}
+
+function Uploader() {
   const { items, batchIds, addFiles, keepDuplicate, skipDuplicate } = useUploadSession();
   const batches = useBatches(batchIds);
   const latestById = new Map<number, FileSummary>(

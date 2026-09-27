@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { mockApi, READY, renderAt } from "@/test/render";
+import { ADMIN, mockApi, READY, renderAt } from "@/test/render";
 
 const FILES = [
   {
@@ -219,5 +219,24 @@ describe("batch AI approval", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(screen.queryByText("2 selected")).toBeNull();
+  });
+
+  it("does not offer deleting or AI to viewers", async () => {
+    const review = [{ ...FILES[0]!, status: "needs_review", open_flags: 0 }];
+    mockApi(
+      (url) => {
+        if (url === "/api/health/ready") return { body: READY };
+        if (url.startsWith("/api/files?")) {
+          return { body: { items: review, total: 1, page: 1, page_size: 25 } };
+        }
+      },
+      { ...ADMIN, role: "viewer" },
+    );
+    renderAt("/files");
+
+    expect(await screen.findByText("inv_0421_copy.pdf")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete inv_0421_copy.pdf" })).toBeNull();
+    expect(screen.queryByLabelText("Select inv_0421_copy.pdf")).toBeNull();
+    expect(screen.getByRole("link", { name: "Download inv_0421_copy.pdf" })).toBeTruthy();
   });
 });

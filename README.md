@@ -52,6 +52,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Review page: the original next to what was extracted, every field and line item editable, categories, reject, and "Mark as OK" for warnings
 - Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
+- Login with username and password, and three roles: viewers look and query, reviewers also upload, fix and approve AI, admins also delete files and manage users; every action is signed with the username
 
 - Opt-in AI extraction with Claude, OpenAI or Gemini, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
 - AI results side by side with the library result on the Review page; disagreements are flagged for you to choose
@@ -61,7 +62,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 
 **Planned**
 
-- Login and user roles, cloud deployment, and exports beyond CSV
+- Cloud deployment, and exports beyond CSV
 
 ## Architecture
 
@@ -113,7 +114,14 @@ docker compose up --build
 | API | http://localhost:8000 |
 | API docs (Swagger) | http://localhost:8000/docs |
 
-Database migrations run automatically when the API starts, and a background worker processes uploaded files. The sidebar shows **Connected** once the API, database and Redis are all reachable.
+Database migrations run automatically when the API starts, and a background worker processes uploaded files.
+
+Create the first admin account, then log in at http://localhost:5173 with it. The password you type here is temporary: Parchi asks for a new one at the first login. Add everyone else on the **Users** page.
+
+```bash
+docker compose exec api python scripts/create_admin.py <username> "<Your name>"
+```
+ The sidebar shows **Connected** once the API, database and Redis are all reachable.
 
 To try it with sample receipts, generate a set of synthetic invoices, receipts, photos and scans (with their expected answers in `answers.json`) and upload them on the Upload page:
 
@@ -215,7 +223,8 @@ Settings are read from environment variables (or `.env`). See [`.env.example`](.
 | `APP_ENV` | `development` | `development`, `production` or `test` |
 | `APP_TIMEZONE` | `Asia/Kolkata` | Timezone for reference-number years and the daily AI cap |
 | `LOG_LEVEL` | `info` | Log verbosity |
-| `LOCAL_USER_NAME` | `local user` | Name recorded on approvals (there is no login in v1) |
+| `COOKIE_SECURE` | `false` | Send the login cookie over HTTPS only; set `true` when serving over HTTPS |
+| `SESSION_DAYS` | `7` | How long a login lasts without being used |
 | `AI_ENABLED` | `false` | Master switch for every AI call |
 | `AI_DAILY_CAP` | `50` | Approved AI extractions allowed per day |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | — | Set only for the providers you use |
@@ -246,6 +255,7 @@ parchi/
 │   ├── src/parchi/
 │   │   ├── ai/             provider interface, Claude, OpenAI and Gemini adapters, prompt
 │   │   ├── api/            FastAPI app, middleware, error handling, routes
+│   │   ├── auth/           passwords, sessions, roles
 │   │   ├── db/             models, enums, sessions, queries
 │   │   ├── extraction/     Excel/CSV, PDF and OCR readers, image cleanup, normalization
 │   │   ├── ingestion/      receive, register, storage, detection, deletion
@@ -273,7 +283,7 @@ parchi/
 
 ## API
 
-Interactive documentation is available at `/docs` when the API is running. Current endpoints:
+Interactive documentation is available at `/docs` when the API is running. Every endpoint except the health checks and login needs a logged-in user, and each checks the role (viewer, reviewer or admin). Current endpoints:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -301,6 +311,14 @@ Interactive documentation is available at `/docs` when the API is running. Curre
 | `GET` | `/receipts/export.csv` | The same receipts as CSV, every page |
 | `GET` | `/vendors` | Vendor names that have receipts, for the vendor filter |
 | `POST` | `/query/ask` | A plain-English question: how it was read, the SQL that ran, and the first page |
+| `POST` | `/auth/login` | Log in; sets the session cookie |
+| `POST` | `/auth/logout` | Log out |
+| `GET` | `/auth/me` | Who is logged in |
+| `PUT` | `/auth/password` | Change your own password |
+| `GET` | `/users` | Accounts (admins) |
+| `POST` | `/users` | Add a user with a temporary password (admins) |
+| `PATCH` | `/users/{id}` | Change a name or role, deactivate or reactivate (admins) |
+| `POST` | `/users/{id}/password` | Reset a password to a temporary one (admins) |
 | `GET` | `/health` | Liveness |
 | `GET` | `/health/ready` | Readiness of PostgreSQL and Redis |
 

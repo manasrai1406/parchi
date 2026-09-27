@@ -257,3 +257,36 @@ export function useAsk() {
     mutationFn: (question: string) => apiSend<AskOut>("POST", "/query/ask", { question }),
   });
 }
+
+export type UserAccount = Schemas["UserOut"];
+
+/** Accounts, for admins (D-045). */
+export function useUsers() {
+  return useQuery({ queryKey: ["users"], queryFn: () => apiGet<UserAccount[]>("/users") });
+}
+
+function useUserMutation<T>(send: (body: T) => Promise<UserAccount>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: send,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useCreateUser() {
+  return useUserMutation((body: Schemas["UserCreateIn"]) =>
+    apiSend<UserAccount>("POST", "/users", body),
+  );
+}
+
+export function useUpdateUser() {
+  return useUserMutation(({ id, ...body }: Schemas["UserUpdateIn"] & { id: number }) =>
+    apiSend<UserAccount>("PATCH", `/users/${id}`, body),
+  );
+}
+
+export function useResetPassword() {
+  return useUserMutation(({ id, temporary_password }: { id: number; temporary_password: string }) =>
+    apiSend<UserAccount>("POST", `/users/${id}/password`, { temporary_password }),
+  );
+}

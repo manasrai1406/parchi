@@ -15,6 +15,7 @@ import {
   type FileStatus,
   type FileSummary,
 } from "@/api/queries";
+import { can, useCurrentUser } from "@/auth/session";
 import { AiApprovalDialog } from "@/components/AiApprovalDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
@@ -49,13 +50,14 @@ function makeColumns(
   onDelete: (file: FileSummary) => void,
   selected: Map<string, FileSummary>,
   onToggle: (file: FileSummary) => void,
+  allowed: { select: boolean; delete: boolean },
 ) {
   return column.columns([
     column.display({
       id: "select",
       header: () => <span className="sr-only">Select</span>,
       cell: ({ row: { original: file } }) =>
-        SELECTABLE.includes(file.status) ? (
+        allowed.select && SELECTABLE.includes(file.status) ? (
           <input
             type="checkbox"
             checked={selected.has(file.ref_no)}
@@ -147,18 +149,20 @@ function makeColumns(
               <FileWarning size={18} strokeWidth={1.8} aria-hidden="true" />
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => onDelete(file)}
-            disabled={BUSY.includes(file.status)}
-            title={
-              BUSY.includes(file.status) ? "Cannot delete while it is being processed" : undefined
-            }
-            aria-label={`Delete ${file.original_name}`}
-            className="inline-flex size-11 items-center justify-center rounded-[10px] border border-input bg-raised text-flagged disabled:opacity-40"
-          >
-            <Trash2 size={18} strokeWidth={1.8} aria-hidden="true" />
-          </button>
+          {allowed.delete && (
+            <button
+              type="button"
+              onClick={() => onDelete(file)}
+              disabled={BUSY.includes(file.status)}
+              title={
+                BUSY.includes(file.status) ? "Cannot delete while it is being processed" : undefined
+              }
+              aria-label={`Delete ${file.original_name}`}
+              className="inline-flex size-11 items-center justify-center rounded-[10px] border border-input bg-raised text-flagged disabled:opacity-40"
+            >
+              <Trash2 size={18} strokeWidth={1.8} aria-hidden="true" />
+            </button>
+          )}
         </div>
       ),
     }),
@@ -235,6 +239,10 @@ export function FilesPage() {
   const deletion = useDeleteFile();
   const [selected, setSelected] = useState<Map<string, FileSummary>>(new Map());
   const [approving, setApproving] = useState(false);
+  // Reviewers send files to AI; only admins delete (D-044).
+  const me = useCurrentUser();
+  const allowSelect = can(me, "reviewer");
+  const allowDelete = can(me, "admin");
   const columns = useMemo(
     () =>
       makeColumns(
@@ -250,9 +258,10 @@ export function FilesPage() {
             else next.set(file.ref_no, file);
             return next;
           }),
+        { select: allowSelect, delete: allowDelete },
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset is stable
-    [selected],
+    [selected, allowSelect, allowDelete],
   );
 
   const table = useTable({

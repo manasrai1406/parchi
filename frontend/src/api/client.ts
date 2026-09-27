@@ -61,7 +61,11 @@ export async function apiDelete(path: string): Promise<void> {
 }
 
 /** POST / PUT a JSON body and read the JSON answer. */
-export async function apiSend<T>(method: "POST" | "PUT", path: string, body?: unknown): Promise<T> {
+export async function apiSend<T>(
+  method: "POST" | "PUT" | "PATCH",
+  path: string,
+  body?: unknown,
+): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method,
     headers: { Accept: "application/json", "Content-Type": "application/json" },

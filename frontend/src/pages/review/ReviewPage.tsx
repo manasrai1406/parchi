@@ -16,6 +16,7 @@ import {
   useSaveReceipts,
   type FileDetail,
 } from "@/api/queries";
+import { can, useCurrentUser } from "@/auth/session";
 import { AiApprovalDialog } from "@/components/AiApprovalDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatRupees } from "@/lib/format";
@@ -80,6 +81,7 @@ function Preview({ file }: { file: FileDetail }) {
 
 function Flags({ file }: { file: FileDetail }) {
   const resolve = useResolveFlag();
+  const canResolve = can(useCurrentUser(), "reviewer");
   const open = file.flags.filter((flag) => !flag.resolved);
   if (open.length === 0) return null;
   return (
@@ -104,7 +106,7 @@ function Flags({ file }: { file: FileDetail }) {
               </span>
               <span className="text-[13px] text-text">{flag.detail}</span>
             </div>
-            {flag.severity !== "error" && (
+            {canResolve && flag.severity !== "error" && (
               <button
                 type="button"
                 className={cn(SECONDARY, "shrink-0")}
@@ -132,6 +134,7 @@ function CategorySelect({
 }) {
   const { data: categories } = useCategories();
   const create = useCreateCategory();
+  const canAdd = can(useCurrentUser(), "reviewer");
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
 
@@ -192,10 +195,12 @@ function CategorySelect({
           </option>
         ))}
       </select>
-      <button type="button" className={cn(SECONDARY, "shrink-0")} onClick={() => setAdding(true)}>
-        <Plus size={16} aria-hidden="true" />
-        New
-      </button>
+      {canAdd && (
+        <button type="button" className={cn(SECONDARY, "shrink-0")} onClick={() => setAdding(true)}>
+          <Plus size={16} aria-hidden="true" />
+          New
+        </button>
+      )}
     </div>
   );
 }
@@ -449,6 +454,8 @@ function ReviewForm({ file }: { file: FileDetail }) {
   const save = useSaveReceipts(file.ref_no);
   const [saved, setSaved] = useState(false);
   const busy = BUSY.includes(file.status) || file.status === "pending";
+  // Viewers see the file and what was read, but cannot change it (D-044).
+  const canEdit = can(useCurrentUser(), "reviewer");
 
   const onSubmit = form.handleSubmit((values) => {
     setSaved(false);
@@ -497,18 +504,20 @@ function ReviewForm({ file }: { file: FileDetail }) {
           </div>
         )}
 
-        {receipts.fields.map((field, index) =>
-          index === current ? (
-            <ReceiptEditor
-              key={field.id}
-              index={index}
-              library={library[index]}
-              ai={latestAi?.result?.[index]}
-              aiLabel={aiLabel}
-              form={form}
-            />
-          ) : null,
-        )}
+        <fieldset disabled={!canEdit} className="m-0 min-w-0 border-0 p-0">
+          {receipts.fields.map((field, index) =>
+            index === current ? (
+              <ReceiptEditor
+                key={field.id}
+                index={index}
+                library={library[index]}
+                ai={latestAi?.result?.[index]}
+                aiLabel={aiLabel}
+                form={form}
+              />
+            ) : null,
+          )}
+        </fieldset>
 
         {save.error instanceof Error && (
           <p role="alert" className="text-sm text-flagged">
@@ -521,28 +530,35 @@ function ReviewForm({ file }: { file: FileDetail }) {
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-3">
-          {AI_ELIGIBLE.includes(file.status) && (
-            <button type="button" className={SECONDARY} onClick={() => setAskingAi(true)}>
-              {latestAi ? "Try AI again…" : "Extract with AI…"}
+        {!canEdit && (
+          <p className="text-right text-[13px] text-muted">
+            You can view this file. A reviewer or admin can change it.
+          </p>
+        )}
+        {canEdit && (
+          <div className="flex items-center justify-end gap-3">
+            {AI_ELIGIBLE.includes(file.status) && (
+              <button type="button" className={SECONDARY} onClick={() => setAskingAi(true)}>
+                {latestAi ? "Try AI again…" : "Extract with AI…"}
+              </button>
+            )}
+            <button
+              type="button"
+              className={cn(SECONDARY, "text-flagged")}
+              disabled={busy}
+              onClick={() => setRejecting(true)}
+            >
+              Reject file
             </button>
-          )}
-          <button
-            type="button"
-            className={cn(SECONDARY, "text-flagged")}
-            disabled={busy}
-            onClick={() => setRejecting(true)}
-          >
-            Reject file
-          </button>
-          <button
-            type="submit"
-            disabled={busy || save.isPending}
-            className="h-11 rounded-[10px] bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
-          >
-            {save.isPending ? "Saving…" : "Accept and resolve"}
-          </button>
-        </div>
+            <button
+              type="submit"
+              disabled={busy || save.isPending}
+              className="h-11 rounded-[10px] bg-accent px-5 text-sm font-semibold text-on-accent disabled:opacity-50"
+            >
+              {save.isPending ? "Saving…" : "Accept and resolve"}
+            </button>
+          </div>
+        )}
         {busy && (
           <p className="text-right text-[13px] text-muted">
             This file is still being read. It can be reviewed when it finishes.
