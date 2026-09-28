@@ -1,16 +1,18 @@
-"""Logging in and out, and changing one's own password (D-043)."""
+"""Logging in and out, signing up, and changing one's own password (D-043, D-046)."""
 
 from fastapi import APIRouter, Request, Response
 from fastapi import status as http_status
+from sqlalchemy.exc import IntegrityError
 
 from parchi.api.deps import SessionDep, SettingsDep
 from parchi.api.errors import AppError, ErrorResponse
 from parchi.auth import accounts, passwords, sessions
 from parchi.auth.deps import LoggedIn
 from parchi.config import Settings
+from parchi.db.enums import UserRole
 from parchi.db.models import User
 from parchi.logging import bind_context, get_logger
-from parchi.schemas.api import LoginIn, MeOut, PasswordChangeIn
+from parchi.schemas.api import AuthOptions, LoginIn, MeOut, PasswordChangeIn, SignupIn
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 log = get_logger(__name__)
@@ -41,6 +43,46 @@ async def login(
     await session.commit()
     bind_context(user_id=user.id)
     log.info("auth.logged_in")
+    _set_cookie(response, token, settings)
+    return MeOut.model_validate(user)
+
+
+@router.get("/options")
+async def options(settings: SettingsDep) -> AuthOptions:
+    """What the login page may offer. Open: it is asked before anyone logs in."""
+    return AuthOptions(signup=settings.allow_signup)
+
+
+@router.post(
+    "/signup",
+    status_code=http_status.HTTP_201_CREATED,
+    responses={403: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+async def signup(
+    body: SignupIn, response: Response, session: SessionDep, settings: SettingsDep
+) -> MeOut:
+    """Create one's own account, always as a Viewer, and log in (D-046)."""
+    if not settings.allow_signup:
+        raise AppError(
+            403, "signup_disabled", "Sign-up is turned off. Ask an admin for an account."
+        )
+    taken = AppError(409, "username_taken", f'The username "{body.username}" is already taken.')
+    if await accounts.find_by_username(session, body.username) is not None:
+        raise taken
+    if body.password.lower() == body.username:
+        raise AppError(400, "weak_password", "The password cannot be your username.")
+    user = User(username=body.username, display_name=body.display_name, role=UserRole.VIEWER)
+    accounts.set_password(user, body.password, temporary=False)
+    session.add(user)
+    try:
+        await session.flush()
+    except IntegrityError as exc:  # the same username a moment ago
+        raise taken from exc
+    token = await sessions.start(session, user.id, settings.session_days)
+    user.last_login_at = sessions.now()
+    await session.commit()
+    bind_context(user_id=user.id)
+    log.info("auth.signed_up")
     _set_cookie(response, token, settings)
     return MeOut.model_validate(user)
 

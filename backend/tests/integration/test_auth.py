@@ -10,7 +10,13 @@ from tests.integration.conftest import PASSWORD, log_in
 pytestmark = pytest.mark.db
 
 # Routes anyone may call, and routes that change nothing although they are not GETs.
-OPEN = {("GET", "/health"), ("GET", "/health/ready"), ("POST", "/auth/login")}
+OPEN = {
+    ("GET", "/health"),
+    ("GET", "/health/ready"),
+    ("POST", "/auth/login"),
+    ("POST", "/auth/signup"),
+    ("GET", "/auth/options"),
+}
 READ_ONLY_POSTS = {("POST", "/query/ask")}
 # A logged-in user may always log out and change their own password.
 OWN_ACCOUNT = {("POST", "/auth/logout"), ("PUT", "/auth/password"), ("GET", "/auth/me")}
@@ -267,3 +273,56 @@ def test_admins_cannot_demote_or_deactivate_themselves(api: TestClient) -> None:
         response = api.patch(f"/users/{me['id']}", json=change)
         assert (response.status_code, response.json()["code"]) == (409, "own_account")
     assert api.patch(f"/users/{me['id']}", json={"display_name": "The Admin"}).status_code == 200
+
+
+# --- signing up (D-046) ------------------------------------------------------------------------
+
+SIGNUP = {"username": "Neha.G", "display_name": " Neha  Gupta ", "password": "neha's password 1"}
+
+
+def test_anyone_can_sign_up_and_is_logged_in_as_a_viewer(api: TestClient) -> None:
+    api.cookies.clear()
+    assert api.get("/auth/options").json() == {"signup": True}
+
+    response = api.post("/auth/signup", json=SIGNUP)
+
+    assert response.status_code == 201, response.text
+    me = response.json()
+    assert (me["username"], me["display_name"], me["role"], me["must_change_password"]) == (
+        "neha.g",
+        "Neha Gupta",
+        "viewer",
+        False,
+    )
+    assert api.get("/files").status_code == 200  # logged in straight away
+    assert api.post("/batches").status_code == 403  # but only as a viewer
+    api.cookies.clear()
+    log_in(api, "neha.g", SIGNUP["password"])
+
+
+def test_the_role_cannot_be_chosen_at_sign_up(api: TestClient) -> None:
+    api.cookies.clear()
+    response = api.post("/auth/signup", json={**SIGNUP, "role": "admin"})
+    assert response.status_code == 422
+
+
+def test_sign_up_refuses_taken_names_and_weak_passwords(api: TestClient) -> None:
+    api.cookies.clear()
+    taken = api.post("/auth/signup", json={**SIGNUP, "username": "ADMIN"})
+    assert (taken.status_code, taken.json()["code"]) == (409, "username_taken")
+    short = api.post("/auth/signup", json={**SIGNUP, "password": "short"})
+    assert short.status_code == 422
+    same = api.post(
+        "/auth/signup", json={**SIGNUP, "username": "nehagupta1", "password": "NehaGupta1"}
+    )
+    assert (same.status_code, same.json()["code"]) == (400, "weak_password")
+
+
+def test_sign_up_can_be_turned_off(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from parchi.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "allow_signup", False)
+    api.cookies.clear()
+    assert api.get("/auth/options").json() == {"signup": False}
+    response = api.post("/auth/signup", json=SIGNUP)
+    assert (response.status_code, response.json()["code"]) == (403, "signup_disabled")

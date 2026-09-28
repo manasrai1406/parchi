@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 
-import { useLogin, useMe } from "@/auth/session";
+import { useAuthOptions, useLogin, useMe } from "@/auth/session";
 import { Logo } from "@/components/Sidebar";
 
 const FIELD =
@@ -49,6 +49,7 @@ export function Field({
 export function LoginPage() {
   const { data: me, isPending } = useMe();
   const login = useLogin();
+  const { data: options } = useAuthOptions();
   const navigate = useNavigate();
   const from = (useLocation().state as { from?: string } | null)?.from ?? "/files";
   const [username, setUsername] = useState("");
@@ -99,6 +100,14 @@ export function LoginPage() {
           {login.isPending ? "Logging in…" : "Log in"}
         </button>
       </form>
+      {options?.signup && (
+        <p className="text-sm text-muted">
+          New here?{" "}
+          <Link to="/signup" className="text-accent-text">
+            Create an account
+          </Link>
+        </p>
+      )}
       <p className="text-xs text-muted">Forgot your password? Ask an admin to reset it.</p>
     </AuthCard>
   );

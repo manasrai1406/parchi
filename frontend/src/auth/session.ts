@@ -72,3 +72,24 @@ export function useChangePassword() {
     onSuccess: (me) => queryClient.setQueryData(ME_KEY, me),
   });
 }
+
+/** What the login page may offer, asked before anyone logs in. */
+export function useAuthOptions() {
+  return useQuery({
+    queryKey: ["auth", "options"],
+    queryFn: () => apiGet<Schemas["AuthOptions"]>("/auth/options"),
+    staleTime: Infinity,
+  });
+}
+
+/** Create one's own account (always a Viewer, D-046); the person is logged in at once. */
+export function useSignup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (details: Schemas["SignupIn"]) => apiSend<Me>("POST", "/auth/signup", details),
+    onSuccess: (me) => {
+      queryClient.clear();
+      queryClient.setQueryData(ME_KEY, me);
+    },
+  });
+}

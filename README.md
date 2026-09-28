@@ -52,7 +52,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Review page: the original next to what was extracted, every field and line item editable, categories, reject, and "Mark as OK" for warnings
 - Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
-- Login with username and password, and three roles: viewers look and query, reviewers also upload, fix and approve AI, admins also delete files and manage users; every action is signed with the username
+- Login with username and password, sign-up for new people (as viewers), and three roles: viewers look and query, reviewers also upload, fix and approve AI, admins also delete files and manage users; every action is signed with the username
 
 - Opt-in AI extraction with Claude, OpenAI or Gemini, one file or a batch, only after you approve it: the approval dialog says exactly what is sent, approvals are recorded with who, when and which provider, results are cached per file and provider, and a daily cap applies
 - AI results side by side with the library result on the Review page; disagreements are flagged for you to choose
@@ -116,7 +116,7 @@ docker compose up --build
 
 Database migrations run automatically when the API starts, and a background worker processes uploaded files.
 
-Create the first admin account, then log in at http://localhost:5173 with it. The password you type here is temporary: Parchi asks for a new one at the first login. Add everyone else on the **Users** page.
+Create the first admin account, then log in at http://localhost:5173 with it. The password you type here is temporary: Parchi asks for a new one at the first login. Other people can create their own accounts from the login page (they start as viewers), or you can add them on the **Users** page.
 
 ```bash
 docker compose exec api python scripts/create_admin.py <username> "<Your name>"
@@ -225,6 +225,7 @@ Settings are read from environment variables (or `.env`). See [`.env.example`](.
 | `LOG_LEVEL` | `info` | Log verbosity |
 | `COOKIE_SECURE` | `false` | Send the login cookie over HTTPS only; set `true` when serving over HTTPS |
 | `SESSION_DAYS` | `7` | How long a login lasts without being used |
+| `ALLOW_SIGNUP` | `true` | Let people create their own Viewer accounts; `false` means only admins add people |
 | `AI_ENABLED` | `false` | Master switch for every AI call |
 | `AI_DAILY_CAP` | `50` | Approved AI extractions allowed per day |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | — | Set only for the providers you use |
@@ -283,7 +284,7 @@ parchi/
 
 ## API
 
-Interactive documentation is available at `/docs` when the API is running. Every endpoint except the health checks and login needs a logged-in user, and each checks the role (viewer, reviewer or admin). Current endpoints:
+Interactive documentation is available at `/docs` when the API is running. Every endpoint except the health checks, login and sign-up needs a logged-in user, and each checks the role (viewer, reviewer or admin). Current endpoints:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -312,6 +313,8 @@ Interactive documentation is available at `/docs` when the API is running. Every
 | `GET` | `/vendors` | Vendor names that have receipts, for the vendor filter |
 | `POST` | `/query/ask` | A plain-English question: how it was read, the SQL that ran, and the first page |
 | `POST` | `/auth/login` | Log in; sets the session cookie |
+| `POST` | `/auth/signup` | Create your own account, as a Viewer, and log in |
+| `GET` | `/auth/options` | Whether sign-up is offered |
 | `POST` | `/auth/logout` | Log out |
 | `GET` | `/auth/me` | Who is logged in |
 | `PUT` | `/auth/password` | Change your own password |

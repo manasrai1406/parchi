@@ -380,6 +380,30 @@ class MeOut(BaseModel):
     must_change_password: bool
 
 
+class SignupIn(BaseModel):
+    """A new account made by the person themselves. The role is always Viewer (D-046)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    username: Username
+    display_name: DisplayName
+    password: Password
+
+    @field_validator("username")
+    @classmethod
+    def _lower(cls, value: str) -> str:
+        return value.lower()
+
+    @field_validator("display_name")
+    @classmethod
+    def _name(cls, value: str) -> str:
+        return _tidy_name(value)
+
+
+class AuthOptions(BaseModel):
+    signup: bool = Field(description="Whether people can create their own accounts")
+
+
 class PasswordChangeIn(BaseModel):
     current_password: str = Field(min_length=1, max_length=PASSWORD_MAX)
     new_password: Password

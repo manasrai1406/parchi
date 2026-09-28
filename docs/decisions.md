@@ -353,3 +353,10 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Date:** 2026-09-28
 - **Decision:** There is no public sign-up (user's choice). The first admin is made with `python scripts/create_admin.py`. Admins add users with a temporary password, change roles, deactivate and reactivate accounts, and reset forgotten passwords; a new or reset password must be changed at the next login. Usernames (3 to 50 of `a-z 0-9 . _ -`, stored in lower case) never change; display names can. An admin cannot demote or deactivate themselves, so there is always at least one active admin.
 - **Why:** Chosen by the user: no email service is needed.
+
+## D-046 People can create their own accounts, as viewers
+
+- **Date:** 2026-09-28
+- **Decision:** The login page links to a sign-up page (user's choice). Anyone can choose a username, a display name and a password (the same rules as D-043 and D-045) and is logged in at once as a **Viewer**. The role cannot be chosen at sign-up; an admin promotes people on the Users page. `ALLOW_SIGNUP` (default `true`) turns sign-up off, for example when Parchi is reachable from the internet; `GET /auth/options` tells the login page whether to offer it. Admins can still create accounts with a temporary password.
+- **Why:** Chosen by the user: people should not need an admin to get an account. Viewers can read receipts and export them, but cannot change or delete anything.
+- **Changes:** D-045 ("no public sign-up").

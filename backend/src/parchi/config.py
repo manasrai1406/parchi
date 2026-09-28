@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # the browser only sends the session cookie over encrypted connections.
     cookie_secure: bool = False
     session_days: int = Field(default=7, ge=1, le=90)
+    # Anyone can create a Viewer account from the login page (D-046). Turn it off when
+    # Parchi can be reached by people who should not see the receipts.
+    allow_signup: bool = True
 
     # AI is off unless explicitly enabled, and even then every call needs approval.
     ai_enabled: bool = False

@@ -114,3 +114,59 @@ describe("login", () => {
     expect(screen.getByText("Viewer", { exact: false })).toBeTruthy();
   });
 });
+
+describe("sign-up", () => {
+  const VIEWER = { ...ADMIN, id: 7, username: "neha", display_name: "Neha Gupta", role: "viewer" };
+
+  function signupApi(signup: boolean) {
+    return mockApi((url, method) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/auth/options") return { body: { signup } };
+      if (url.startsWith("/api/files?")) return { body: EMPTY_PAGE };
+      if (method === "POST" && url === "/api/auth/signup") return { status: 201, body: VIEWER };
+    }, null);
+  }
+
+  it("lets someone create their own account and logs them in", async () => {
+    const fetchMock = signupApi(true);
+    const router = renderAt("/login");
+
+    fireEvent.click(await screen.findByRole("link", { name: "Create an account" }));
+    expect(await screen.findByRole("heading", { name: "Create an account" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "neha" } });
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Neha Gupta" } });
+    fireEvent.change(screen.getByLabelText(/^Password \(/), {
+      target: { value: "a long password" },
+    });
+    fireEvent.change(screen.getByLabelText("Password again"), {
+      target: { value: "different one" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(screen.getByRole("alert").textContent).toBe("The two passwords do not match.");
+
+    fireEvent.change(screen.getByLabelText("Password again"), {
+      target: { value: "a long password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/files"));
+    const posted = fetchMock.mock.calls.find(([url]) => String(url) === "/api/auth/signup");
+    expect(JSON.parse(String(posted?.[1]?.body))).toEqual({
+      username: "neha",
+      display_name: "Neha Gupta",
+      password: "a long password",
+    });
+  });
+
+  it("does not offer sign-up when it is turned off", async () => {
+    signupApi(false);
+    renderAt("/login");
+    expect(await screen.findByRole("heading", { name: "Log in" })).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: "Create an account" })).toBeNull(),
+    );
+    cleanup();
+    renderAt("/signup");
+    expect(await screen.findByText("Sign-up is turned off here.")).toBeTruthy();
+  });
+});
