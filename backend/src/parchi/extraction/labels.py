@@ -62,6 +62,10 @@ FIELD_LABELS: dict[str, list[str]] = {
         "net amount",
         "amount due",
         "total due",
+        # Cinema tickets: "Aggregate", often misspelt by their ticketing systems (D-047).
+        "aggregate amount",
+        "aggregate",
+        "agreegate",
         "total",
     ],
     "subtotal": [
@@ -71,6 +75,8 @@ FIELD_LABELS: dict[str, list[str]] = {
         "taxable amount",
         "total before tax",
         "amount before tax",
+        # Last: a plain "Net" beside the tax lines is the amount before tax (D-047).
+        "net",
     ],
     "tax": ["total gst", "total tax", "gst amount", "tax amount", "total tax amount", "gst", "tax"],
     # Parts of the tax, added up when no overall tax line is printed.
@@ -153,6 +159,24 @@ def match_label(raw: str, fields: dict[str, list[str]] = FIELD_LABELS) -> LabelM
             rest = raw[found.end() :] if found else ""
             best = LabelMatch(field, label, priority, rest.strip(" :.-#\t|"))
     return best
+
+
+_MONEY_LABELS = sorted(
+    {label for field in ("total", "subtotal", "tax", "tax_part") for label in FIELD_LABELS[field]},
+    key=len,
+    reverse=True,
+)
+_SPLIT = re.compile(
+    r"(?<=\d)\s+(?=(?:" + "|".join(re.escape(label) for label in _MONEY_LABELS) + r")\b)",
+    re.IGNORECASE,
+)
+
+
+def split_labelled(line: str) -> list[str]:
+    """One line holding several amounts, read as separate parts (D-047):
+    'Net: 180.00 CGST : Rs 16.20 SGST : Rs 16.20' -> 'Net: 180.00', 'CGST : Rs 16.20', ...
+    A new part starts only where a money label follows a number."""
+    return [part for part in _SPLIT.split(line) if part.strip()]
 
 
 def is_document_title(text: str) -> bool:

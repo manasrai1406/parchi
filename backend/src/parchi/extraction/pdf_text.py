@@ -14,7 +14,12 @@ import pdfplumber
 from parchi.db.enums import FileKind, RunParser
 from parchi.extraction.base import UnreadableFileError
 from parchi.extraction.grid import confidence_of, find_items_table
-from parchi.extraction.labels import FIELD_LABELS, is_document_title, match_label
+from parchi.extraction.labels import (
+    FIELD_LABELS,
+    is_document_title,
+    match_label,
+    split_labelled,
+)
 from parchi.extraction.normalize import (
     DATE_PATTERN,
     amounts_in,
@@ -103,7 +108,7 @@ def read_group(pages: list[Page]) -> ReceiptSchema | None:
 
     best: dict[str, tuple[int, Decimal]] = {}
     tax_parts: dict[str, Decimal] = {}
-    for line in lines:
+    for line in (part for full in lines for part in split_labelled(full)):
         match = match_label(line)
         if match is None or match.field not in {"total", "subtotal", "tax", "tax_part"}:
             continue

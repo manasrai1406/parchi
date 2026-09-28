@@ -360,3 +360,11 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
 - **Decision:** The login page links to a sign-up page (user's choice). Anyone can choose a username, a display name and a password (the same rules as D-043 and D-045) and is logged in at once as a **Viewer**. The role cannot be chosen at sign-up; an admin promotes people on the Users page. `ALLOW_SIGNUP` (default `true`) turns sign-up off, for example when Parchi is reachable from the internet; `GET /auth/options` tells the login page whether to offer it. Admins can still create accounts with a temporary password.
 - **Why:** Chosen by the user: people should not need an admin to get an account. Viewers can read receipts and export them, but cannot change or delete anything.
 - **Changes:** D-045 ("no public sign-up").
+
+## D-047 Lessons from a real cinema ticket
+
+- **Date:** 2026-09-28
+- **Decision:** A real cinema ticket (not committed) printed its total as "Agreegate: Rs …" and its net and tax on one line, "Net: … CGST : Rs … SGST : Rs …". Two reading rules change:
+  1. "Aggregate", its misspelling "Agreegate" and "Aggregate amount" are total labels (after the stronger ones such as "Grand Total"). A plain "Net" is the amount before tax, weakest of those labels; "Net Amount" and "Net Payable" stay totals.
+  2. A line holding several amounts is read as separate parts: a new part starts where a money label (total, subtotal, tax or a tax part such as CGST) follows a number, as a whole word.
+- **Why:** The library read the vendor, number and date but no total, so the ticket went to review. With these rules it reads the total, net and tax, which add up. `tests/unit/test_labels.py` keeps the ticket's layout tested, with made-up details and without the photo.
