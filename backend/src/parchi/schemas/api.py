@@ -225,6 +225,24 @@ class ReceiptIn(BaseModel):
 
 class ManualEdit(BaseModel):
     receipts: list[ReceiptIn] = Field(min_length=1, max_length=200)
+    keep_as_test: bool = Field(
+        default=False, description="Copy the file and this answer to the local test set (D-048)"
+    )
+
+
+class LearnedLabel(BaseModel):
+    """A label the reader learned from this correction (D-048)."""
+
+    vendor: str
+    field: Literal["subtotal", "tax", "total"]
+    label: str
+
+
+class SavedReview(FileDetail):
+    """The file after a person's save, with what the reader learned from it (D-048)."""
+
+    learned: list[LearnedLabel] = Field(default_factory=list)
+    kept_as_test: bool = False
 
 
 class RejectIn(BaseModel):

@@ -188,6 +188,9 @@ class ExtractionRun(IdMixin, TimestampMixin, Base):
     cached_from_id: Mapped[int | None] = mapped_column(
         sa.ForeignKey("extraction_runs.id", ondelete="SET NULL"), index=True
     )
+    # The text a library reader saw, so a person's correction can teach a vendor's labels
+    # (D-048). Loaded only when asked for; never logged.
+    text: Mapped[str | None] = mapped_column(sa.Text, deferred=True)
 
     file: Mapped[File] = relationship(back_populates="runs", lazy="raise")
 
@@ -316,6 +319,41 @@ File.open_flags = column_property(
     .scalar_subquery()
 )
 
+LEARNED_FIELDS = ("subtotal", "tax", "total")
+
+
+class VendorLabel(IdMixin, TimestampMixin, Base):
+    """A label a person's correction taught the reader, for one vendor (D-048).
+
+    A label learned for three or more vendors is used for every receipt.
+    """
+
+    __tablename__ = "vendor_labels"
+    __table_args__ = (
+        sa.UniqueConstraint("vendor_key", "field", "label"),
+        sa.CheckConstraint(
+            "field IN (" + ", ".join(f"'{f}'" for f in LEARNED_FIELDS) + ")", name="field_known"
+        ),
+        sa.CheckConstraint("label <> '' AND label = lower(label)", name="label_clean"),
+        sa.CheckConstraint(
+            "vendor_key <> '' AND vendor_key = lower(vendor_key)", name="vendor_key_clean"
+        ),
+        sa.CheckConstraint("times_used >= 0", name="times_used_positive"),
+        sa.Index("ix_vendor_labels_field_label", "field", "label"),
+    )
+
+    # The vendor's normalized name in lower case, so "SHARMA TRADERS" and "Sharma Traders"
+    # share what they learned.
+    vendor_key: Mapped[str] = mapped_column(sa.String(255))
+    field: Mapped[str] = mapped_column(sa.String(10))
+    label: Mapped[str] = mapped_column(sa.String(60))
+    taught_by: Mapped[str] = mapped_column(sa.String(50))
+    taught_from_run_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("extraction_runs.id", ondelete="SET NULL"), index=True
+    )
+    times_used: Mapped[int] = mapped_column(sa.Integer, server_default="0")
+
+
 USERNAME_PATTERN = r"^[a-z0-9._-]{3,50}$"
 
 
@@ -374,5 +412,6 @@ ALL_TABLES = [
         Flag.__table__,
         User.__table__,
         UserSession.__table__,
+        VendorLabel.__table__,
     )
 ]

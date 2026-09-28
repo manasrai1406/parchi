@@ -141,7 +141,45 @@ describe("Review page", () => {
           ],
         },
       ],
+      keep_as_test: true, // ticked by itself once something was corrected
     });
+  });
+
+  it("says what the reader learned, and keeps the receipt only if ticked", async () => {
+    const detail = file();
+    const fetchMock = mockApi((url, method) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/categories") return { body: CATEGORIES };
+      if (url === `/api/files/${detail.ref_no}` && method === "GET") return { body: detail };
+      if (method === "PUT") {
+        return {
+          body: {
+            ...detail,
+            status: "resolved",
+            error: null,
+            learned: [{ vendor: "Raju Hardware", field: "total", label: "kul rashi" }],
+            kept_as_test: false,
+          },
+        };
+      }
+    });
+    renderAt("/review/REF-2026-000005");
+    await screen.findByLabelText("Vendor");
+    const keep = screen.getByLabelText("Keep as a test receipt") as HTMLInputElement;
+    expect(keep.checked).toBe(false); // nothing corrected yet
+
+    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-08-20" } });
+    fireEvent.change(screen.getByLabelText("Total"), { target: { value: "210" } });
+    expect(keep.checked).toBe(true);
+    fireEvent.click(keep);
+    fireEvent.click(screen.getByRole("button", { name: "Accept and resolve" }));
+
+    expect(
+      await screen.findByText(
+        "Parchi learned that “kul rashi” is the total on Raju Hardware's receipts.",
+      ),
+    ).toBeTruthy();
+    expect((sentBody(fetchMock, "PUT") as { keep_as_test: boolean }).keep_as_test).toBe(false);
   });
 
   it("marks a warning as OK", async () => {

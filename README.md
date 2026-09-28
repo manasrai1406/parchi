@@ -50,6 +50,8 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - Categories: eight built-in ones, plus custom categories you can add, rename and delete
 - Validation: line items and subtotal + tax must match the total (within ₹1), dates must fall in this or last financial year, and repeated receipts are caught; problems are kept as warnings to look at
 - Review page: the original next to what was extracted, every field and line item editable, categories, reject, and "Mark as OK" for warnings
+- Learns from your corrections: when you fix a total, subtotal or tax, Parchi remembers the label that vendor prints (such as "Agreegate") and reads their next receipt by itself; a label learned from three vendors is used for everyone
+- Your real receipts as a local test set: tick "Keep as a test receipt" when resolving, and `scripts/check_real_samples.py` checks the readers still get them right (kept only on your machine)
 - Summary cards and counts on the Files page, and error reports as PDF (one file, or all flagged files as a zip)
 - Health and readiness checks for the API, database and queue
 - Login with username and password, sign-up for new people (as viewers), and three roles: viewers look and query, reviewers also upload, fix and approve AI, admins also delete files and manage users; every action is signed with the username
@@ -200,6 +202,17 @@ Scores every sample with known answers (synthetic ones, and your own in `data/sa
 docker compose exec api python scripts/benchmark_extractors.py
 ```
 
+### Checking the readers on your own receipts
+
+Receipts you keep as tests on the Review page are copied, with the answer you confirmed, to `data/samples/real/` (never committed). Re-read them all after changing a reader:
+
+```bash
+docker compose exec api python scripts/check_real_samples.py                # with learned labels
+docker compose exec api python scripts/check_real_samples.py --library-only # built-in labels only
+```
+
+It lists each receipt as `ok` or `FAIL` with the fields read wrong, and exits with 1 if any failed.
+
 ### Regenerating API types
 
 After changing an endpoint, regenerate the frontend's types from the backend's OpenAPI spec:
@@ -225,6 +238,7 @@ Settings are read from environment variables (or `.env`). See [`.env.example`](.
 | `LOG_LEVEL` | `info` | Log verbosity |
 | `COOKIE_SECURE` | `false` | Send the login cookie over HTTPS only; set `true` when serving over HTTPS |
 | `SESSION_DAYS` | `7` | How long a login lasts without being used |
+| `REAL_SAMPLES_DIR` | `/data/samples/real` in Docker | Where receipts kept as tests are copied (unset: the option is off) |
 | `ALLOW_SIGNUP` | `true` | Let people create their own Viewer accounts; `false` means only admins add people |
 | `AI_ENABLED` | `false` | Master switch for every AI call |
 | `AI_DAILY_CAP` | `50` | Approved AI extractions allowed per day |

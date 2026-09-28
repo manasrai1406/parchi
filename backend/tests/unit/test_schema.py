@@ -97,8 +97,8 @@ def test_library_parsers_snapshot_matches_code() -> None:
 
 def test_migrations_create_every_table() -> None:
     # 0001 created the original seven; 0002 added categories (D-026); 0006 users and
-    # sessions (D-043).
-    later = {"categories", "users", "sessions"}
+    # sessions (D-043); 0007 vendor_labels (D-048).
+    later = {"categories", "users", "sessions", "vendor_labels"}
     assert set(load_initial_migration().TABLES) | later == set(ALL_TABLES)
 
 

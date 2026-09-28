@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from parchi.db.enums import FileStatus, FlagSeverity, FlagType
 from parchi.db.models import ExtractionRun, File, Flag, LineItem, Receipt, Vendor
 from parchi.extraction.base import UnreadableFileError, UnsupportedFormatError
+from parchi.extraction.learned import apply_learned
 from parchi.extraction.normalize import clean_vendor
 from parchi.extraction.router import MIN_CONFIDENCE, extractor_for
 from parchi.ingestion.detector import detect
@@ -241,6 +242,12 @@ async def _run(session: AsyncSession, storage: Storage, file: Claimed) -> Outcom
         error=error is not None,
     )
 
+    # Labels people taught fill what the built-in ones missed (D-048).
+    if receipts:
+        async with session.begin():
+            receipts = await apply_learned(session, receipts)
+    read_text = "\n\n".join(r.text for r in receipts if r.text) or None
+
     # Stage 6: check.
     problems = [] if error else basic_problems(receipts, MIN_CONFIDENCE[detection.kind])
     accepted = error is None and not problems
@@ -256,6 +263,7 @@ async def _run(session: AsyncSession, storage: Storage, file: Claimed) -> Outcom
             accepted=accepted,
             error=error,
             finished_at=datetime.now(UTC),
+            text=read_text,
         )
         session.add(run)
         await session.flush()

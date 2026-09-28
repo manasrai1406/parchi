@@ -32,6 +32,17 @@ class ReceiptSchema(BaseModel):
     confidence: float = Field(ge=0, le=1)
     # Where in the file this receipt came from, e.g. "sheet: March" or "pages 1-2".
     source: str
+    # The text it was read from, kept on the run so a person's correction can teach the
+    # reader a vendor's labels (D-048). Not part of the result, and not compared.
+    text: str | None = Field(default=None, exclude=True, repr=False)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ReceiptSchema):
+            return NotImplemented
+        return self.model_dump() == other.model_dump()
+
+    def __hash__(self) -> int:
+        return hash(self.model_dump_json())
 
     def missing_required(self) -> list[str]:
         """Names of the required fields that are empty (D-013 item 1)."""

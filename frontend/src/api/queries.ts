@@ -126,11 +126,17 @@ function useRefreshFiles() {
     ]);
 }
 
+export type SavedReview = Schemas["SavedReview"];
+
+/** Save a person's corrections. The reader may learn labels from them (D-048). */
 export function useSaveReceipts(ref: string) {
   const refresh = useRefreshFiles();
   return useMutation({
-    mutationFn: (receipts: ReceiptIn[]) =>
-      apiSend<FileDetail>("PUT", `/files/${encodeURIComponent(ref)}/receipts`, { receipts }),
+    mutationFn: ({ receipts, keepAsTest }: { receipts: ReceiptIn[]; keepAsTest: boolean }) =>
+      apiSend<SavedReview>("PUT", `/files/${encodeURIComponent(ref)}/receipts`, {
+        receipts,
+        keep_as_test: keepAsTest,
+      }),
     onSuccess: refresh,
   });
 }

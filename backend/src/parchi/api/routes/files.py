@@ -13,7 +13,7 @@ from sqlalchemy import select
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 
-from parchi.api.deps import SessionDep, StorageDep
+from parchi.api.deps import SessionDep, SettingsDep, StorageDep
 from parchi.api.errors import AppError, ErrorResponse
 from parchi.auth.deps import Admin, Reviewer
 from parchi.db.enums import FileStatus
@@ -27,6 +27,7 @@ from parchi.db.repositories import (
 )
 from parchi.ingestion.deletion import FileBusyError, FileNotFoundInDbError, delete_file
 from parchi.logging import bind_context, get_logger
+from parchi.review import learning, test_set
 from parchi.review.actions import UnknownCategoryError, reject_file, save_manual
 from parchi.review.report import build_report
 from parchi.review.views import file_detail
@@ -35,8 +36,10 @@ from parchi.schemas.api import (
     FileDetail,
     FilePage,
     FileSummary,
+    LearnedLabel,
     ManualEdit,
     RejectIn,
+    SavedReview,
 )
 from parchi.validation import rules
 
@@ -202,11 +205,18 @@ async def error_report(file_key: str, session: SessionDep) -> Response:
 
 @router.put("/{file_key}/receipts", responses=ERRORS)
 async def save_receipts(
-    file_key: str, body: ManualEdit, session: SessionDep, user: Reviewer
-) -> FileDetail:
-    """Save a person's edits as the accepted result; the file becomes resolved (D-030)."""
+    file_key: str,
+    body: ManualEdit,
+    session: SessionDep,
+    settings: SettingsDep,
+    storage: StorageDep,
+    user: Reviewer,
+) -> SavedReview:
+    """Save a person's edits as the accepted result; the file becomes resolved (D-030).
+    The reader learns labels it missed (D-048), and the file can be kept as a test."""
     file = await _require_file(session, file_key)
-    file_id = file.id
+    file_id, ref_no, original_name = file.id, file.ref_no, file.original_name
+    source = storage.absolute_path(file.storage_path)
     await session.rollback()
     try:
         await save_manual(
@@ -222,7 +232,36 @@ async def save_receipts(
         raise AppError(409, "file_busy", str(exc)) from exc
     except UnknownCategoryError as exc:
         raise AppError(422, "unknown_category", "That category no longer exists.") from exc
-    return await _require_detail(session, file_key)
+
+    # The correction is saved; learning and keeping must not undo that if they fail.
+    lessons: list[learning.Lesson] = []
+    try:
+        async with session.begin():
+            lessons = await learning.learn(session, file_id, body.receipts, user.username)
+    except Exception:
+        log.exception("review.learning_failed")
+    kept = False
+    if body.keep_as_test and settings.real_samples_dir is not None:
+        try:
+            await run_in_threadpool(
+                test_set.keep,
+                settings.real_samples_dir,
+                source,
+                ref_no,
+                original_name,
+                body.receipts,
+            )
+            kept = True
+            log.info("review.kept_as_test")
+        except OSError:
+            log.exception("review.keep_failed")
+
+    detail = await _require_detail(session, file_key)
+    return SavedReview(
+        **detail.model_dump(),
+        learned=[LearnedLabel(vendor=x.vendor, field=x.field, label=x.label) for x in lessons],
+        kept_as_test=kept,
+    )
 
 
 @router.post("/{file_key}/reject", responses=ERRORS)

@@ -459,6 +459,7 @@ export interface paths {
         /**
          * Save Receipts
          * @description Save a person's edits as the accepted result; the file becomes resolved (D-030).
+         *     The reader learns labels it missed (D-048), and the file can be kept as a test.
          */
         put: operations["save_receipts_files__file_key__receipts_put"];
         post?: never;
@@ -975,6 +976,21 @@ export interface components {
              */
             status: "ok";
         };
+        /**
+         * LearnedLabel
+         * @description A label the reader learned from this correction (D-048).
+         */
+        LearnedLabel: {
+            /** Vendor */
+            vendor: string;
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "subtotal" | "tax" | "total";
+            /** Label */
+            label: string;
+        };
         /** LineItemIn */
         LineItemIn: {
             /** Description */
@@ -1021,6 +1037,12 @@ export interface components {
         ManualEdit: {
             /** Receipts */
             receipts: components["schemas"]["ReceiptIn"][];
+            /**
+             * Keep As Test
+             * @description Copy the file and this answer to the local test set (D-048)
+             * @default false
+             */
+            keep_as_test: boolean;
         };
         /** MeOut */
         MeOut: {
@@ -1297,6 +1319,48 @@ export interface components {
          * @enum {string}
          */
         RunParser: "excel" | "csv" | "pdf_text" | "pdf_scan" | "image" | "ai" | "manual";
+        /**
+         * SavedReview
+         * @description The file after a person's save, with what the reader learned from it (D-048).
+         */
+        SavedReview: {
+            /** Id */
+            id: number;
+            /** Ref No */
+            ref_no: string;
+            /** Original Name */
+            original_name: string;
+            /** Size Bytes */
+            size_bytes: number;
+            kind: components["schemas"]["FileKind"] | null;
+            status: components["schemas"]["FileStatus"];
+            /** Error */
+            error: string | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            duplicate_of: components["schemas"]["FileRef"] | null;
+            /**
+             * Open Flags
+             * @description Unresolved problems a person should look at
+             */
+            open_flags: number;
+            /** Receipts */
+            receipts: components["schemas"]["ReceiptOut"][];
+            /** Flags */
+            flags: components["schemas"]["FlagOut"][];
+            /** Runs */
+            runs: components["schemas"]["RunOut"][];
+            /** Learned */
+            learned?: components["schemas"]["LearnedLabel"][];
+            /**
+             * Kept As Test
+             * @default false
+             */
+            kept_as_test: boolean;
+        };
         /**
          * SignupIn
          * @description A new account made by the person themselves. The role is always Viewer (D-046).
@@ -2373,7 +2437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileDetail"];
+                    "application/json": components["schemas"]["SavedReview"];
                 };
             };
             /** @description Not Found */

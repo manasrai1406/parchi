@@ -368,3 +368,14 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   1. "Aggregate", its misspelling "Agreegate" and "Aggregate amount" are total labels (after the stronger ones such as "Grand Total"). A plain "Net" is the amount before tax, weakest of those labels; "Net Amount" and "Net Payable" stay totals.
   2. A line holding several amounts is read as separate parts: a new part starts where a money label (total, subtotal, tax or a tax part such as CGST) follows a number, as a whole word.
 - **Why:** The library read the vendor, number and date but no total, so the ticket went to review. With these rules it reads the total, net and tax, which add up. `tests/unit/test_labels.py` keeps the ticket's layout tested, with made-up details and without the photo.
+
+## D-048 Built-in labels, labels learned per vendor, and real receipts as tests
+
+- **Date:** 2026-09-28
+- **Decision:** Receipts name their totals in endless ways, so three things work together (user's choice):
+  1. **Built-in labels first** (labels.py, as today).
+  2. **Labels learned from corrections.** When a reviewer saves a total, subtotal or tax the library missed or got wrong (user's choice: amounts only), the text the library read is searched for the line holding that amount; the words in front of it (e.g. `agreegate` in "Agreegate: Rs 212.40") become a label for that vendor in `vendor_labels`, signed with the reviewer's username. Nothing is learned when the amount appears after more than one different label, when the words are a built-in label, or when the reader was already right. A later read tries the vendor's learned labels only for the amounts still missing, then labels learned for **three or more vendors**, which apply to every receipt (user's choice). A filled amount raises the confidence as any found field does, keeping the OCR scaling. The Review page says what was learned.
+  3. **Real receipts as tests, on this machine.** The Review page's **Keep as a test receipt** box (ticked when something was corrected; user's choice) copies the original and the confirmed answer into `REAL_SAMPLES_DIR` (`data/samples/real/`, never committed). `scripts/check_real_samples.py` re-reads them all, with learned labels or `--library-only`, and fails when a field is read wrong, so a reader change that breaks a real receipt is caught.
+  The text each library reader saw is kept on its run (`extraction_runs.text`, loaded only when needed, never logged) so the lesson can be found after the fact.
+- **Why:** Chosen by the user. A fixed list cannot be complete; learning from the corrections people already make, with a local test set to guard against regressions, improves reading without guessing.
+- **Changes the data model:** migration `0007` (`extraction_runs.text`, `vendor_labels`).

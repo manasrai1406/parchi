@@ -214,4 +214,12 @@ def read_receipt(grid: Grid, source: str) -> ReceiptSchema | None:
     }
     if not (fields["total"] or fields["line_items"] or fields["receipt_number"]):
         return None
-    return ReceiptSchema(**fields, confidence=confidence_of(fields), source=source)
+    return ReceiptSchema(
+        **fields, confidence=confidence_of(fields), source=source, text=grid_text(grid)
+    )
+
+
+def grid_text(grid: Grid) -> str:
+    """The sheet as lines of text, a row per line, for learning labels (D-048)."""
+    rows = (" ".join(str(cell) for cell in row if clean_text(cell) is not None) for row in grid)
+    return "\n".join(row for row in rows if row)

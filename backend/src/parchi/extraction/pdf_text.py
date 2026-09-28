@@ -159,7 +159,9 @@ def read_group(pages: list[Page]) -> ReceiptSchema | None:
         return None
     first, last = pages[0].number, pages[-1].number
     source = f"page {first}" if first == last else f"pages {first}-{last}"
-    return ReceiptSchema(**fields, confidence=confidence_of(fields), source=source)
+    return ReceiptSchema(
+        **fields, confidence=confidence_of(fields), source=source, text="\n".join(lines)
+    )
 
 
 def read_pages(path: Path) -> list[Page]:

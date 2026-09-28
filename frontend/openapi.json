@@ -1265,7 +1265,7 @@
           "files"
         ],
         "summary": "Save Receipts",
-        "description": "Save a person's edits as the accepted result; the file becomes resolved (D-030).",
+        "description": "Save a person's edits as the accepted result; the file becomes resolved (D-030).\nThe reader learns labels it missed (D-048), and the file can be kept as a test.",
         "operationId": "save_receipts_files__file_key__receipts_put",
         "parameters": [
           {
@@ -1294,7 +1294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileDetail"
+                  "$ref": "#/components/schemas/SavedReview"
                 }
               }
             }
@@ -2931,6 +2931,35 @@
         ],
         "title": "HealthResponse"
       },
+      "LearnedLabel": {
+        "properties": {
+          "vendor": {
+            "type": "string",
+            "title": "Vendor"
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "subtotal",
+              "tax",
+              "total"
+            ],
+            "title": "Field"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vendor",
+          "field",
+          "label"
+        ],
+        "title": "LearnedLabel",
+        "description": "A label the reader learned from this correction (D-048)."
+      },
       "LineItemIn": {
         "properties": {
           "description": {
@@ -3114,6 +3143,12 @@
             "maxItems": 200,
             "minItems": 1,
             "title": "Receipts"
+          },
+          "keep_as_test": {
+            "type": "boolean",
+            "title": "Keep As Test",
+            "description": "Copy the file and this answer to the local test set (D-048)",
+            "default": false
           }
         },
         "type": "object",
@@ -4043,6 +4078,121 @@
           "manual"
         ],
         "title": "RunParser"
+      },
+      "SavedReview": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ref_no": {
+            "type": "string",
+            "title": "Ref No"
+          },
+          "original_name": {
+            "type": "string",
+            "title": "Original Name"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FileStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "open_flags": {
+            "type": "integer",
+            "title": "Open Flags",
+            "description": "Unresolved problems a person should look at"
+          },
+          "receipts": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptOut"
+            },
+            "type": "array",
+            "title": "Receipts"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/FlagOut"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunOut"
+            },
+            "type": "array",
+            "title": "Runs"
+          },
+          "learned": {
+            "items": {
+              "$ref": "#/components/schemas/LearnedLabel"
+            },
+            "type": "array",
+            "title": "Learned"
+          },
+          "kept_as_test": {
+            "type": "boolean",
+            "title": "Kept As Test",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref_no",
+          "original_name",
+          "size_bytes",
+          "kind",
+          "status",
+          "error",
+          "uploaded_at",
+          "duplicate_of",
+          "open_flags",
+          "receipts",
+          "flags",
+          "runs"
+        ],
+        "title": "SavedReview",
+        "description": "The file after a person's save, with what the reader learned from it (D-048)."
       },
       "SignupIn": {
         "properties": {

@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # Parchi can be reached by people who should not see the receipts.
     allow_signup: bool = True
 
+    # Where receipts kept as tests are copied, with their confirmed answers (D-048). Unset
+    # means the Review page cannot keep them. Under data/, so never committed.
+    real_samples_dir: Path | None = None
+
     # AI is off unless explicitly enabled, and even then every call needs approval.
     ai_enabled: bool = False
     ai_daily_cap: int = Field(default=50, ge=0)

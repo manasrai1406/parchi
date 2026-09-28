@@ -15,6 +15,7 @@ import {
   useResolveFlag,
   useSaveReceipts,
   type FileDetail,
+  type SavedReview,
 } from "@/api/queries";
 import { can, useCurrentUser } from "@/auth/session";
 import { AiApprovalDialog } from "@/components/AiApprovalDialog";
@@ -120,6 +121,25 @@ function Flags({ file }: { file: FileDetail }) {
         );
       })}
     </ul>
+  );
+}
+
+const FIELD_NAMES = { total: "the total", subtotal: "the amount before tax", tax: "the tax" };
+
+/** What the save did: resolved, and what the reader learned from it (D-048). */
+function SavedNote({ saved }: { saved: SavedReview }) {
+  return (
+    <div role="status" className="flex flex-col gap-1 text-sm text-success-text">
+      <p>
+        Saved. The file is resolved.
+        {saved.kept_as_test && " It was kept as a test receipt."}
+      </p>
+      {(saved.learned ?? []).map((lesson) => (
+        <p key={`${lesson.field}-${lesson.label}`} className="text-accent-text">
+          {`Parchi learned that “${lesson.label}” is ${FIELD_NAMES[lesson.field]} on ${lesson.vendor}'s receipts.`}
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -452,13 +472,16 @@ function ReviewForm({ file }: { file: FileDetail }) {
   const [current, setCurrent] = useState(0);
   const [rejecting, setRejecting] = useState(false);
   const save = useSaveReceipts(file.ref_no);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<SavedReview | null>(null);
+  // Kept as a test receipt when something was corrected, unless the person says otherwise.
+  const [keepChoice, setKeepChoice] = useState<boolean | null>(null);
+  const keepAsTest = keepChoice ?? form.formState.isDirty;
   const busy = BUSY.includes(file.status) || file.status === "pending";
   // Viewers see the file and what was read, but cannot change it (D-044).
   const canEdit = can(useCurrentUser(), "reviewer");
 
   const onSubmit = form.handleSubmit((values) => {
-    setSaved(false);
+    setSaved(null);
     const checked = formSchema.safeParse(values);
     if (!checked.success) {
       for (const issue of checked.error.issues) {
@@ -468,12 +491,16 @@ function ReviewForm({ file }: { file: FileDetail }) {
       if (typeof first === "number") setCurrent(first);
       return;
     }
-    save.mutate(toReceiptsIn(values), {
-      onSuccess: (detail) => {
-        form.reset(initialValues(detail));
-        setSaved(true);
+    save.mutate(
+      { receipts: toReceiptsIn(values), keepAsTest },
+      {
+        onSuccess: (detail) => {
+          form.reset(initialValues(detail));
+          setKeepChoice(null);
+          setSaved(detail);
+        },
       },
-    });
+    );
   });
 
   return (
@@ -524,11 +551,7 @@ function ReviewForm({ file }: { file: FileDetail }) {
             {save.error.message}
           </p>
         )}
-        {saved && (
-          <p role="status" className="text-sm text-success-text">
-            Saved. The file is resolved.
-          </p>
-        )}
+        {saved && <SavedNote saved={saved} />}
 
         {!canEdit && (
           <p className="text-right text-[13px] text-muted">
@@ -537,6 +560,15 @@ function ReviewForm({ file }: { file: FileDetail }) {
         )}
         {canEdit && (
           <div className="flex items-center justify-end gap-3">
+            <label className="mr-auto flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-muted">
+              <input
+                type="checkbox"
+                checked={keepAsTest}
+                onChange={(event) => setKeepChoice(event.target.checked)}
+                className="size-4.5 accent-accent"
+              />
+              Keep as a test receipt
+            </label>
             {AI_ELIGIBLE.includes(file.status) && (
               <button type="button" className={SECONDARY} onClick={() => setAskingAi(true)}>
                 {latestAi ? "Try AI again…" : "Extract with AI…"}

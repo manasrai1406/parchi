@@ -42,6 +42,8 @@ services:
       REDIS_URL: redis://redis:6379
       STORAGE_DIR: /data/uploads
       LOG_DIR: /app/logs
+      # Receipts kept as tests on the Review page (D-048); data/ is never committed.
+      REAL_SAMPLES_DIR: /data/samples/real
       # File-change events do not reach containers from Windows or macOS drives: poll.
       WATCHFILES_FORCE_POLLING: "true"
     command: >
