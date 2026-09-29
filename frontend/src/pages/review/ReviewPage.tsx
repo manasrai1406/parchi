@@ -143,6 +143,9 @@ function SavedNote({ saved }: { saved: SavedReview }) {
   );
 }
 
+// The last option of the Category list opens the "new category" box (D-049).
+const NEW_CATEGORY = "__new__";
+
 function CategorySelect({
   index,
   register,
@@ -201,27 +204,28 @@ function CategorySelect({
       </div>
     );
   }
+  const field = register(`receipts.${index}.category_id`);
   return (
-    <div className="flex gap-2">
-      <select
-        className={INPUT}
-        aria-label="Category"
-        {...register(`receipts.${index}.category_id`)}
-      >
-        <option value="">No category</option>
-        {categories?.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
-      {canAdd && (
-        <button type="button" className={cn(SECONDARY, "shrink-0")} onClick={() => setAdding(true)}>
-          <Plus size={16} aria-hidden="true" />
-          New
-        </button>
-      )}
-    </div>
+    <select
+      className={INPUT}
+      aria-label="Category"
+      {...field}
+      onChange={(event) => {
+        if (event.target.value === NEW_CATEGORY) {
+          setAdding(true);
+          return;
+        }
+        return field.onChange(event);
+      }}
+    >
+      <option value="">No category</option>
+      {categories?.map((category) => (
+        <option key={category.id} value={category.id}>
+          {category.name}
+        </option>
+      ))}
+      {canAdd && <option value={NEW_CATEGORY}>+ New category…</option>}
+    </select>
   );
 }
 

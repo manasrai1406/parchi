@@ -1,4 +1,13 @@
-import { FileCheck2, List, LogOut, Search, Upload, Users, type LucideIcon } from "lucide-react";
+import {
+  FileCheck2,
+  List,
+  LogOut,
+  Search,
+  Tags,
+  Upload,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { Link, NavLink } from "react-router";
 
 import { useAiUsage, useReadiness, useSummary } from "@/api/queries";
@@ -12,6 +21,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; badge?: boolean;
   { to: "/files", label: "Files", icon: List, badge: true, role: "viewer" },
   { to: "/review", label: "Review", icon: FileCheck2, badge: true, role: "viewer" },
   { to: "/query", label: "Query", icon: Search, role: "viewer" },
+  { to: "/categories", label: "Categories", icon: Tags, role: "reviewer" },
   { to: "/users", label: "Users", icon: Users, role: "admin" },
 ];
 

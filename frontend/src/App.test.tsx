@@ -30,7 +30,7 @@ describe("app shell", () => {
     renderAt("/files");
 
     const nav = await screen.findByRole("navigation", { name: "Main" });
-    expect(navLinks(nav)).toEqual(["Upload", "Files", "Review", "Query", "Users"]);
+    expect(navLinks(nav)).toEqual(["Upload", "Files", "Review", "Query", "Categories", "Users"]);
     expect(screen.getByRole("link", { name: "Files" }).getAttribute("aria-current")).toBe("page");
     expect(await screen.findByRole("heading", { name: "Files" })).toBeTruthy();
   });

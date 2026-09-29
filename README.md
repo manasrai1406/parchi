@@ -47,7 +47,7 @@ Businesses handle thousands of receipts a month in every format imaginable. Parc
 - OCR for scanned PDFs and photos (JPG, PNG, WebP) with PaddleOCR: straightens skewed photos, turns sideways and upside-down pages, evens out shadows and fading; poor reads go to review instead of guessing
 - Multi-receipt files: one receipt per sheet, and PDFs split into receipts by content
 - A background worker with automatic recovery and retries
-- Categories: eight built-in ones, plus custom categories you can add, rename and delete
+- Categories: eight built-in ones, plus custom categories you add from the Review page's Category list or the Categories page, where you can also rename and delete them
 - Validation: line items and subtotal + tax must match the total (within ₹1), dates must fall in this or last financial year, and repeated receipts are caught; problems are kept as warnings to look at
 - Review page: the original next to what was extracted, every field and line item editable, categories, reject, and "Mark as OK" for warnings
 - Learns from your corrections: when you fix a total, subtotal or tax, Parchi remembers the label that vendor prints (such as "Agreegate") and reads their next receipt by itself; a label learned from three vendors is used for everyone

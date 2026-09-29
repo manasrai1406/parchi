@@ -379,3 +379,11 @@ A log of decisions made while building Parchi, newest last. `docs/PLAN.md` holds
   The text each library reader saw is kept on its run (`extraction_runs.text`, loaded only when needed, never logged) so the lesson can be found after the fact.
 - **Why:** Chosen by the user. A fixed list cannot be complete; learning from the corrections people already make, with a local test set to guard against regressions, improves reading without guessing.
 - **Changes the data model:** migration `0007` (`extraction_runs.text`, `vendor_labels`).
+
+## D-049 Categories are easier to find and manage
+
+- **Date:** 2026-09-30
+- **Decision:** Categories stay one per receipt (user's choice). Two interface changes, no API or data change:
+  1. On the Review page, **+ New category…** is the last option of the Category list (for reviewers and admins), replacing the separate New button.
+  2. A **Categories** page in the sidebar (reviewers and admins) lists every category with whether it is built-in and how many receipts and vendors use it. Custom categories can be added, renamed, and deleted when unused; built-in ones are locked (D-026). Viewers who open the page see the list without actions.
+- **Why:** Requested by the user: custom categories existed but were hard to find, and renaming or deleting was only possible through the API.

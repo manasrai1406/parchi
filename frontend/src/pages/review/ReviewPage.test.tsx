@@ -306,4 +306,26 @@ describe("Review page with an AI result", () => {
     renderAt("/review/REF-2026-000005");
     expect(await screen.findByRole("button", { name: "Extract with AI…" })).toBeTruthy();
   });
+
+  it("adds a new category from the Category list and picks it", async () => {
+    const detail = file();
+    const fetchMock = mockApi((url, method) => {
+      if (url === "/api/health/ready") return { body: READY };
+      if (url === "/api/categories" && method === "GET") return { body: CATEGORIES };
+      if (url === "/api/categories" && method === "POST") {
+        return { status: 201, body: { id: 7, name: "Medical", builtin: false, in_use: 0 } };
+      }
+      if (url === `/api/files/${detail.ref_no}` && method === "GET") return { body: detail };
+    });
+    renderAt("/review/REF-2026-000005");
+    await screen.findByRole("option", { name: "Fuel" });
+
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "__new__" } });
+    fireEvent.change(screen.getByLabelText("New category name"), { target: { value: "Medical" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true),
+    );
+  });
 });

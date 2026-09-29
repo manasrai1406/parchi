@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from "react-router";
 
 import { Layout } from "@/components/Layout";
+import { CategoriesPage } from "@/pages/categories/CategoriesPage";
 import { FilesPage } from "@/pages/files/FilesPage";
 import { ChangePasswordPage } from "@/pages/login/ChangePasswordPage";
 import { LoginPage } from "@/pages/login/LoginPage";
@@ -26,6 +27,7 @@ export const routes: RouteObject[] = [
       { path: "review", element: <ReviewQueue /> },
       { path: "review/:ref", element: <ReviewPage /> },
       { path: "query", element: <QueryPage /> },
+      { path: "categories", element: <CategoriesPage /> },
       { path: "users", element: <UsersPage /> },
       { path: "*", element: <NotFound /> },
     ],

@@ -173,6 +173,24 @@ export function useCreateCategory() {
   });
 }
 
+export function useRenameCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      apiSend<Category>("PATCH", `/categories/${id}`, { name }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
+/** Only custom categories that nothing uses can be deleted (D-026). */
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`/categories/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
 export type AiProvider = Schemas["AiExtractIn"]["provider"];
 export type AiUsage = Schemas["AiUsage"];
 
