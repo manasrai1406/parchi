@@ -419,6 +419,3 @@ All errors share one shape, `{ "code", "message", "request_id" }`, so any error 
 - [`docs/decisions.md`](docs/decisions.md): every decision made since the plan, and why (49 so far)
 - [`docs/design/`](docs/design/): UI designs and design tokens
 
-## License
-
-To be added.
